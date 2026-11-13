@@ -1,0 +1,43 @@
+name: Draft Windows release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify release source and version
+        shell: pwsh
+        run: |
+          git fetch origin Master:refs/remotes/origin/Master
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git merge-base --is-ancestor $env:GITHUB_SHA refs/remotes/origin/Master
+          if ($LASTEXITCODE -ne 0) { throw 'Release tags must point to a commit on Master.' }
+          node Scripts/PrepareRelease.cjs $env:GITHUB_REF_NAME
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run: npm ci
+      - run: npm test
+      - run: npm run package
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath Output/Installer -Filter '*.msi')
+          if ($installers.Count -ne 1) { throw 'Expected exactly one MSI installer.' }
+          gh release create $env:GITHUB_REF_NAME $installers[0].FullName --draft --verify-tag --title "FFU Cloner $env:GITHUB_REF_NAME" --notes-file Output/Release/Notes.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

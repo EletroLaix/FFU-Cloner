@@ -47,9 +47,11 @@ npm test
 npm run package
 ```
 
-The MSI is created in `Output/Installer`. The Windows CI workflow builds the same package and uploads it as an artifact; it does not publish releases. Builds are unsigned unless signing is configured separately. Release publishing, version/tag policy, and signing credentials must be configured before public distribution.
+The MSI is created in `Output/Installer`. The Windows CI workflow tests and builds the package for `Master` and `Develop`, and uploads it as an artifact. Builds are unsigned unless signing is configured separately.
 
 `Master` holds the release baseline; ongoing development takes place on `Develop`. Both branches start from version 0.1.0.
+
+To prepare a release, update the version in both package files and add the matching section to `Documentation/Changelog.md`. Once the release commit is on `Master`, push a matching tag such as `v0.1.0`. The release workflow validates the tag and branch, runs the tests, builds the MSI and creates a draft GitHub Release containing the installer and release notes. Review and publish the draft manually. The workflow does not create tags or publish releases by itself.
 
 Use `npm run start:build` to build and launch for development, then `npm start` to reopen the existing build without compiling it again. Use `npm run dev` for a browser preview with simulated data. Automated checks are available through `npm test`, `npm run test:ui`, and `npm run test:electron`. Run `npm run test:startup` to measure three interface launches with simulated, pending environment and disk queries. Set `FFU_APP_PATH` to an extracted `resources/app.asar` to check the packaged application code. These timings exclude ZIP extraction, UAC and physical disk discovery.
 
