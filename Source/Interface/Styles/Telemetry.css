@@ -1,0 +1,38 @@
+.speed-telemetry {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+.speed-chart {
+	display: block;
+	width: 144px;
+	height: 42px;
+	overflow: visible;
+	color: var(--accent);
+}
+.speed-baseline {
+	stroke: #ffffff12;
+	stroke-dasharray: 2 4;
+}
+.speed-line {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.transfer-speed {
+	min-width: 80px;
+	text-align: right;
+	white-space: nowrap;
+	color: #ffad6b;
+	font:
+		20px 'Space Grotesk',
+		sans-serif;
+}
+.transfer-speed small {
+	color: #9f9288;
+	font-size: 11px;
+}

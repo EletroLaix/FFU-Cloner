@@ -1,0 +1,62 @@
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes slide {
+	0% {
+		transform: translateX(-120%);
+	}
+	100% {
+		transform: translateX(440%);
+	}
+}
+@media (max-width: 980px) {
+	.speed-chart {
+		width: 108px;
+	}
+	.speed-telemetry {
+		gap: 10px;
+	}
+	.app-shell {
+		padding: 23px 28px 18px;
+	}
+	header {
+		margin: -23px -28px 0;
+		padding: 23px 28px 23px;
+	}
+	header::after {
+		left: 28px;
+		right: 28px;
+	}
+	h1 {
+		font-size: 29px;
+	}
+	.card {
+		padding: 17px;
+	}
+	.intro {
+		gap: 15px;
+	}
+	.mode-switch button {
+		padding: 10px;
+	}
+	.workflow {
+		grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+	}
+	.primary {
+		padding: 13px 15px;
+	}
+	.operation-copy p {
+		max-width: 360px;
+	}
+	.intro p {
+		font-size: 11px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+	}
+}

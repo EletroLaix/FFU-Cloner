@@ -1,0 +1,237 @@
+header {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: -26px -36px 0;
+	padding: 26px 36px 23px;
+	-webkit-app-region: drag;
+}
+header::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 36px;
+	right: 36px;
+	border-bottom: 1px solid #ffffff0b;
+	pointer-events: none;
+}
+header button {
+	-webkit-app-region: no-drag;
+}
+.window-controls {
+	display: flex;
+	gap: 3px;
+	padding-left: 13px;
+	margin-left: 3px;
+	border-left: 1px solid #2b241e;
+}
+.window-controls .icon-button {
+	width: 30px;
+	height: 30px;
+}
+.window-controls .window-close:hover:not(:disabled) {
+	background: #f9700e22;
+	color: #ffa35b;
+}
+
+.brand,
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+.brand-symbol {
+	display: grid;
+	place-items: center;
+	width: 43px;
+	height: 43px;
+	background: linear-gradient(135deg, var(--primary), var(--accent));
+	color: #170b03;
+	border: 1px solid #ffad5f70;
+	border-radius: 12px;
+	box-shadow: 0 0 28px #f9700e18;
+}
+.brand b {
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.8px;
+}
+.brand-dot {
+	color: var(--primary);
+}
+.eyebrow {
+	display: block;
+	font:
+		10px/1.6 ui-monospace,
+		Consolas,
+		monospace;
+	letter-spacing: 1.9px;
+	color: #8f8f8f;
+}
+
+.header-actions {
+	gap: 19px;
+}
+.quiet,
+.icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: #a5a5a5;
+	border-radius: 7px;
+}
+.quiet {
+	padding: 8px 9px;
+	font-size: 12px;
+}
+.quiet:hover:not(:disabled),
+.icon-button:hover:not(:disabled) {
+	background: #202020;
+	color: var(--text);
+}
+.icon-button {
+	width: 32px;
+	height: 32px;
+}
+.quiet:disabled {
+	opacity: 0.4;
+}
+.intro {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 22px;
+	padding: 30px 0 25px;
+}
+.intro-label {
+	color: #d79762;
+	font-size: 9px;
+	letter-spacing: 2.2px;
+	margin-bottom: 10px;
+}
+h1 {
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: 34px;
+	line-height: 1.15;
+	letter-spacing: -1.25px;
+	margin: 0;
+	font-weight: 600;
+}
+h1 br {
+	display: none;
+}
+h1 span {
+	margin-left: 8px;
+	background: linear-gradient(115deg, #f9700e, #ffaf59);
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+.intro p {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 11px 0 0;
+}
+.mode-switch {
+	display: flex;
+	flex-shrink: 0;
+	padding: 4px;
+	gap: 3px;
+	border: 1px solid var(--border);
+	background: #101010;
+	border-radius: 10px;
+}
+.mode-switch button {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 13px;
+	border: 1px solid transparent;
+	background: transparent;
+	border-radius: 7px;
+	color: #929292;
+	font-size: 11px;
+}
+.mode-switch button.active {
+	background: #f9700e16;
+	color: #ffa35b;
+	border-color: #f9700e38;
+	box-shadow: inset 0 1px 0 #ffffff05;
+}
+.mode-switch button:hover:not(:disabled) {
+	color: #f5f5f5;
+	background: #23201d;
+}
+.mode-switch button:disabled {
+	opacity: 0.6;
+}
+
+.language-control {
+	position: relative;
+	-webkit-app-region: no-drag;
+}
+.language-toggle {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	height: 29px;
+	padding: 0 8px;
+	background: #17120e;
+	border: 1px solid #423022;
+	border-radius: 7px;
+	color: #d7af8d;
+	font-size: 10px;
+	letter-spacing: 0.7px;
+}
+.language-toggle:hover:not(:disabled) {
+	color: #ffad6b;
+	border-color: #8e4c21;
+	background: #22180f;
+}
+.language-toggle:disabled {
+	opacity: 0.4;
+}
+.language-options {
+	position: absolute;
+	z-index: 15;
+	right: 0;
+	top: 35px;
+	min-width: 143px;
+	padding: 4px;
+	border: 1px solid #54371f;
+	border-radius: 9px;
+	background: #161310;
+	box-shadow: 0 8px 24px #0009;
+}
+.language-options button {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 9px 8px;
+	font-size: 11px;
+	border: 0;
+	border-radius: 5px;
+	background: transparent;
+	color: #b8b1ac;
+	text-align: left;
+}
+.language-options button:hover,
+.language-options button[aria-checked='true'] {
+	color: #ffad6b;
+	background: #f9700e10;
+}
+.language-code {
+	font:
+		9px ui-monospace,
+		Consolas,
+		monospace;
+	color: #a28064;
+}
+.language-options button svg {
+	margin-left: auto;
+}

@@ -1,0 +1,66 @@
+{
+	"name": "ffu-cloner",
+	"version": "0.1.0",
+	"private": true,
+	"description": "FFU disk capture and restore tool",
+	"author": "Marino Adriani",
+	"main": "Source/Application/Main.cjs",
+	"scripts": {
+		"dev": "vite --host 127.0.0.1",
+		"build": "vite build",
+		"start": "electron .",
+		"start:build": "npm run build && npm start",
+		"test": "node --test Tests/*.test.cjs",
+		"package": "npm run build && electron-builder --win msi --x64 --publish never",
+		"test:ui": "node Scripts/CheckUi.cjs",
+		"test:electron": "node Scripts/CheckElectron.cjs",
+		"test:startup": "node Scripts/CheckStartup.cjs",
+		"format": "prettier --write Source Scripts Tests vite.config.mjs package.json"
+	},
+	"build": {
+		"appId": "io.marinoandriani.ffucloner",
+		"artifactName": "FFU-Cloner-${version}-${arch}-Setup.${ext}",
+		"productName": "FFU Cloner",
+		"directories": {
+			"output": "Output/Installer"
+		},
+		"files": [
+			"Output/Renderer/**/*",
+			"Source/Application/**/*",
+			"Source/Resources/Locales/*.json",
+			"Source/Resources/Images/Icon.png",
+			"package.json"
+		],
+		"asar": true,
+		"asarUnpack": [
+			"Source/Application/Windows/*.ps1"
+		],
+		"win": {
+			"target": [
+				"msi"
+			],
+			"requestedExecutionLevel": "requireAdministrator",
+			"icon": "Source/Resources/Images/Icon.ico"
+		},
+		"msi": {
+			"oneClick": false,
+			"perMachine": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"runAfterFinish": false
+		}
+	},
+	"devDependencies": {
+		"electron": "45.3.0",
+		"electron-builder": "26.18.0",
+		"playwright-core": "1.65.0",
+		"prettier": "3.9.10",
+		"vite": "8.3.8",
+		"react": "19.3.1",
+		"react-dom": "19.3.1",
+		"lucide-react": "1.72.0"
+	},
+	"overrides": {
+		"minimatch": "11.0.1"
+	}
+}

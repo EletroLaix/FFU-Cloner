@@ -1,0 +1,74 @@
+.workflow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
+	align-items: stretch;
+}
+.card {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	height: 355px;
+	background: linear-gradient(145deg, #141414, #0e0e0e);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	padding: 20px;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
+}
+.card.complete {
+	border-color: #a85a26;
+	box-shadow: 0 0 24px -15px #f9700e55;
+}
+.card.compact {
+	height: auto;
+	min-height: 152px;
+	align-self: center;
+	padding: 18px 20px;
+}
+.compact .card-heading {
+	margin-bottom: 14px;
+}
+.selection-summary {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+.selection-summary > div {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	gap: 6px;
+}
+.selection-summary strong {
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.selection-summary span:not(.summary-icon) {
+	font-size: 11px;
+	color: #aaa;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.selection-summary small {
+	font:
+		10px ui-monospace,
+		Consolas,
+		monospace;
+	color: #888;
+}
+.summary-icon {
+	display: grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: #f9700e0c;
+	color: #e49d64;
+	flex-shrink: 0;
+}

@@ -1,0 +1,94 @@
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: #000b;
+	backdrop-filter: blur(8px);
+	z-index: 10;
+}
+.confirmation {
+	position: relative;
+	width: 520px;
+	max-height: calc(100vh - 40px);
+	overflow: auto;
+	background: linear-gradient(150deg, #1c1611, #101010 50%);
+	border: 1px solid #5a3821;
+	border-radius: 16px;
+	box-shadow:
+		0 0 80px #f9700e0d,
+		0 25px 70px #0008;
+	padding: 28px;
+}
+.close {
+	position: absolute;
+	right: 15px;
+	top: 15px;
+}
+.confirm-icon {
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 13px;
+	background: #f9700e13;
+	border: 1px solid #f9700e30;
+	color: #ff9d4d;
+	margin-bottom: 16px;
+}
+
+.confirmation h2 {
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: 24px;
+	line-height: 1.25;
+	letter-spacing: -0.6px;
+	margin: 8px 0 22px;
+}
+.confirm-disk {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	background: #ffffff04;
+	border: 1px solid #33302e;
+	border-radius: 10px;
+	padding: 16px;
+	color: #dba375;
+}
+.confirm-disk > div {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.confirm-disk strong {
+	font-size: 14px;
+	color: #eee;
+}
+.confirm-disk span {
+	font-size: 11px;
+	color: #aaa;
+}
+.confirm-disk small {
+	font:
+		10px ui-monospace,
+		Consolas,
+		monospace;
+	color: #999;
+}
+.confirmation p {
+	font-size: 12px;
+	line-height: 1.7;
+	color: #c3aa97;
+	margin: 17px 0;
+}
+
+.confirm-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 9px;
+	margin-top: 23px;
+}
+.spin {
+	animation: spin 1.3s linear infinite;
+}

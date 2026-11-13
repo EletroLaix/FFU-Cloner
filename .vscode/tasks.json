@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Prepare FFU Cloner for debugging",
+			"type": "process",
+			"command": "node",
+			"args": ["${workspaceFolder}/Scripts/PrepareDebug.cjs"],
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": []
+		}
+	]
+}
