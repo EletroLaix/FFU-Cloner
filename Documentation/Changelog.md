@@ -17,6 +17,7 @@
 - Refresh the README with a direct release link and document the Develop-to-Master release process.
 - Adopt GPL-3.0-only for the project source code.
 - Remove the obsolete portable launcher diagnostic and its retired runtime references.
+- Simplify the README build instructions.
 
 ### Known issues
 

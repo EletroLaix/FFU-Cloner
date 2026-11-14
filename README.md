@@ -62,15 +62,7 @@ npm test
 npm run package
 ```
 
-The MSI is created in `Output/Installer`. Builds are unsigned unless signing is configured separately. Run the tests locally before preparing a release.
-
-`Develop` contains ongoing work and topic commits. `Master` contains release commits: when a release is explicitly requested, squash-merge `Develop` into `Master` as one release commit and tag that commit. Do not push development commits directly to `Master`.
-
-To prepare a release, run the tests locally, update the version in both package files and the release badge above, and add the matching section to `Documentation/Changelog.md`. The badge uses a fixed version so it works with the private repository. Once the release commit is on `Master`, push a matching tag such as `v0.1.1`. The release workflow shows separate jobs for tests, compilation, packaging and deployment. The test job validates the tag, branch and release notes; it does not run or verify the local tests. The workflow builds the MSI and publishes a GitHub Release containing the installer and release notes. The repository's visibility determines who can access the release. The workflow does not create tags.
-
-Use `npm run start:build` to build and launch for development, then `npm start` to reopen the existing build without compiling it again. Use `npm run dev` for a browser preview with simulated data. Automated checks are available through `npm test`, `npm run test:ui`, and `npm run test:electron`. Run `npm run test:startup` to measure three interface launches with simulated, pending environment and disk queries. Set `FFU_APP_PATH` to an extracted `resources/app.asar` to check the packaged application code. These timings exclude UAC and physical disk discovery.
-
-On Windows, open this folder in Visual Studio Code and press **F5** or choose **Run and Debug FFU Cloner**. The bundled configuration installs missing npm dependencies and the Electron runtime, then builds the renderer with source maps before attaching debuggers to the Electron main process and React interface. Node.js 24 and npm must be available on PATH, and the first setup requires internet access; the renderer debugger uses local port 9223. Debugging runs with the privileges of Visual Studio Code: start VS Code as administrator when testing functionality that requires elevation.
+The unsigned MSI is created in `Output/Installer`. Use `npm run start:build` to build and launch the app, or press **F5** in Visual Studio Code to run and debug it. The first setup requires internet access. For operations requiring elevation, run Visual Studio Code as administrator.
 
 ## Project structure
 
