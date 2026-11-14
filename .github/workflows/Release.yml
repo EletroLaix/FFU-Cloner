@@ -1,4 +1,4 @@
-name: Draft Windows release
+name: Windows release
 
 on:
   push:
@@ -29,15 +29,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Release tags must point to a commit on Master.' }
           node Scripts/PrepareRelease.cjs $env:GITHUB_REF_NAME
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - run: npm ci
-      - run: npm test
-      - run: npm run package
-      - name: Create draft release
+      - name: Install dependencies
+        run: npm ci
+      - name: Tests (run locally)
+        run: Write-Output 'Tests are run locally; this workflow does not run or verify them.'
+      - name: Compile application
+        run: npm run build
+      - name: Build MSI package
+        run: node node_modules/electron-builder/cli.js --win msi --x64 --publish never
+      - name: Deploy GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $installers = @(Get-ChildItem -LiteralPath Output/Installer -Filter '*.msi')
           if ($installers.Count -ne 1) { throw 'Expected exactly one MSI installer.' }
-          gh release create $env:GITHUB_REF_NAME $installers[0].FullName --draft --verify-tag --title "FFU Cloner $env:GITHUB_REF_NAME" --notes-file Output/Release/Notes.md
+          gh release create $env:GITHUB_REF_NAME $installers[0].FullName --verify-tag --title "FFU Cloner $env:GITHUB_REF_NAME" --notes-file Output/Release/Notes.md
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

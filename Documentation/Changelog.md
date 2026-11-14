@@ -17,8 +17,8 @@
 
 ### Resources
 
-- Added a Windows build workflow and a Visual Studio Code debugging configuration.
-- Added a GitHub Actions workflow that builds a draft release from a version tag on `Master`.
+- Added a Visual Studio Code debugging configuration.
+- Added a GitHub Actions workflow that publishes a release from a version tag on `Master`; tests run locally.
 - Documented the platform engine boundary and the use of artificial intelligence during development.
 
 ### Known issues
