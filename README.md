@@ -3,6 +3,7 @@
 [![Release v0.1.1](https://img.shields.io/badge/release-v0.1.1-4c9aff?style=flat-square)](https://github.com/EletroLaix/FFU-Cloner/releases/latest)
 ![Windows x64](https://img.shields.io/badge/platform-Windows%20x64-0078d4?style=flat-square)
 ![Installer MSI](https://img.shields.io/badge/installer-MSI-805ad5?style=flat-square)
+![License GPLv3](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)
 
 **A complete disk image, in one screen.** Capture and restore Windows Full Flash Update (FFU) images through a focused desktop interface, with clear progress and safety checks along the way.
 
@@ -80,3 +81,7 @@ On Windows, open this folder in Visual Studio Code and press **F5** or choose **
 - `Documentation`: presentation images and the [changelog](Documentation/Changelog.md).
 
 Generated files stay in `Output`, which is excluded from Git. Automated checks use simulated data and processes; physical-disk validation requires suitable test hardware.
+
+## License
+
+Copyright © 2026 Marino Adriani. FFU Cloner is licensed under the [GNU General Public License, version 3 only](https://www.gnu.org/licenses/gpl-3.0.html) (`GPL-3.0-only`). The license permits commercial use and requires distribution of covered derivative works under the same license, including access to their corresponding source code. Private modifications do not have to be published. Third-party components remain subject to their own licenses; their notices are generated during the build.

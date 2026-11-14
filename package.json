@@ -4,6 +4,7 @@
 	"private": true,
 	"description": "FFU disk capture and restore tool",
 	"author": "Marino Adriani",
+	"license": "GPL-3.0-only",
 	"main": "Source/Application/Main.cjs",
 	"scripts": {
 		"dev": "vite --host 127.0.0.1",
