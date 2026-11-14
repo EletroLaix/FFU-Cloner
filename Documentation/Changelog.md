@@ -8,6 +8,7 @@
 
 ### BugFix
 
+- Reduce the window's outer spacing consistently in both full and compact layouts.
 - Keep the window width and its full and compact heights stable throughout selection and operation progress.
 - Restore the selected disk's original online or offline state after operations, including cancellation and errors.
 - Honor a confirmed existing FFU destination and replace it only after capture succeeds.

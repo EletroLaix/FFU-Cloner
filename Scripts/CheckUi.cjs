@@ -232,6 +232,45 @@ const fs = require('node:fs');
 		}
 		await page.reload();
 		assert.equal(await page.locator('html').getAttribute('lang'), 'it');
+		await page.getByRole('radio').first().waitFor();
+		await page.setViewportSize({ width: 860, height: 721 });
+		const outerSpacing = () =>
+			page.locator('.app-shell').evaluate((element) => {
+				const style = getComputedStyle(element);
+				return {
+					left: style.paddingLeft,
+					right: style.paddingRight,
+					top: style.paddingTop,
+					bottom: style.paddingBottom
+				};
+			});
+		const fullSpacing = await outerSpacing();
+		assert.deepEqual(fullSpacing, { left: '20px', right: '20px', top: '16px', bottom: '12px' });
+		assert.ok(
+			await page
+				.locator('footer')
+				.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+		);
+		await page.getByRole('radio').first().click();
+		await page.getByTestId('pick-image').click();
+		for (const width of [860, 1120]) {
+			await page.setViewportSize({ width, height: 512 });
+			for (const name of ['English', 'Deutsch', 'Français', 'Español', 'Polski', 'Italiano']) {
+				await page.getByTestId('language-toggle').click();
+				await page.getByRole('menuitemradio', { name: new RegExp(name) }).click();
+				assert.deepEqual(await outerSpacing(), fullSpacing);
+				assert.ok(
+					await page
+						.locator('footer')
+						.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight),
+					`${name}: footer is visible at ${width}px`
+				);
+				assert.ok(
+					await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+					`${name}: no horizontal overflow at ${width}px`
+				);
+			}
+		}
 
 		console.log(
 			'UI PASS: protected disks, mode order, single-button confirmation, cancel, simulated success, minimum layout; no page errors.'

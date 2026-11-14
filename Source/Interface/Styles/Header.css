@@ -3,16 +3,16 @@ header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin: -26px -36px 0;
-	padding: 26px 36px 23px;
+	margin: -16px -20px 0;
+	padding: 16px 20px 14px;
 	-webkit-app-region: drag;
 }
 header::after {
 	content: '';
 	position: absolute;
 	bottom: 0;
-	left: 36px;
-	right: 36px;
+	left: 20px;
+	right: 20px;
 	border-bottom: 1px solid #ffffff0b;
 	pointer-events: none;
 }
@@ -106,7 +106,7 @@ header button {
 	align-items: center;
 	justify-content: space-between;
 	gap: 22px;
-	padding: 30px 0 25px;
+	padding: 18px 0 16px;
 }
 .intro-label {
 	color: #d79762;

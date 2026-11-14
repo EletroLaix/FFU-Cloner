@@ -5,7 +5,7 @@ const path = require('node:path');
 module.exports = function createWindow() {
 	const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
 	const width = Math.min(1120, area.width);
-	const height = Math.min(820, area.height);
+	const height = Math.min(721, area.height);
 	const window = new BrowserWindow({
 		width,
 		height,
