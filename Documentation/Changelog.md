@@ -8,7 +8,7 @@
 
 ### BugFix
 
-- None.
+- Install and verify the Electron runtime before starting a Visual Studio Code debug session.
 
 ### Resources
 
