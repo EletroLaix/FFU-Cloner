@@ -106,12 +106,7 @@ module.exports = function registerIpc(window, indexFile) {
 					confirmed: request.confirmed === true,
 					logDirectory,
 					version: app.getVersion(),
-					appPaths: [
-						process.execPath,
-						...(process.env.PORTABLE_EXECUTABLE_FILE
-							? [process.env.PORTABLE_EXECUTABLE_FILE]
-							: [])
-					]
+					appPaths: [process.execPath]
 				},
 				(update) => {
 					if (update.logPath) lastLog = update.logPath;
