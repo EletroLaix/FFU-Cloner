@@ -92,6 +92,23 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await page.getByTestId('open-logs').click();
 		const logsDialog = page.getByRole('dialog');
 		await logsDialog.locator('.log-time').waitFor();
+		const closeLogs = logsDialog.locator('.logs-heading .icon-button');
+		const closeBox = await closeLogs.boundingBox();
+		const closeIcon = await closeLogs.locator('svg').boundingBox();
+		assert.ok(Math.abs(closeBox.x + closeBox.width / 2 - closeIcon.x - closeIcon.width / 2) < 1);
+		assert.ok(Math.abs(closeBox.y + closeBox.height / 2 - closeIcon.y - closeIcon.height / 2) < 1);
+		assert.equal(
+			await logsDialog.evaluate((element) =>
+				getComputedStyle(element.closest('.modal-backdrop')).getPropertyValue('-webkit-app-region')
+			),
+			'no-drag'
+		);
+		await page.mouse.move(closeIcon.x + closeIcon.width / 2, closeIcon.y + closeIcon.height / 2);
+		assert.equal(await closeLogs.evaluate((element) => element.matches(':hover')), true);
+		assert.notEqual(
+			await closeLogs.evaluate((element) => getComputedStyle(element).backgroundColor),
+			'rgba(0, 0, 0, 0)'
+		);
 		assert.equal(await logsDialog.locator('.log-time').textContent(), '2026-11-13T12:34:56Z');
 		assert.match(await logsDialog.locator('.logs-content').textContent(), /Simulated log entry/);
 		assert.equal(
@@ -104,6 +121,10 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await logsDialog.locator('.logs-button').last().click();
 		assert.equal(await app.evaluate(() => globalThis.logFolder), logDirectory);
 		await page.keyboard.press('Escape');
+		await logsDialog.waitFor({ state: 'hidden' });
+		await page.getByTestId('open-logs').click();
+		await logsDialog.locator('.log-time').waitFor();
+		await logsDialog.locator('.logs-heading .icon-button').click();
 		await logsDialog.waitFor({ state: 'hidden' });
 		const nativeCalls = await app.evaluate(() => globalThis.nativeCalls);
 		assert.ok(nativeCalls.open >= 1 && nativeCalls.save >= 1 && nativeCalls.logs >= 1);

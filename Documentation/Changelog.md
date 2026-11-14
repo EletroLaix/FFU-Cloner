@@ -15,6 +15,7 @@
 - Let the Visual Studio Code preparation task finish after starting elevated Electron, so the debugger can attach and open the app.
 - Signal Visual Studio Code when elevated Electron is ready even if Windows keeps the task terminal alive.
 - Show the Electron window when starting an elevated debug session.
+- Keep modal dialogs out of the draggable title bar so the logs close button responds where it is drawn.
 - Allow the installed app to open without administrator privileges; disk operations still require elevation.
 
 ### Resources
