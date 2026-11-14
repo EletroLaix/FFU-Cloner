@@ -117,6 +117,11 @@ const fs = require('node:fs');
 		await start.click();
 		const final = page.getByRole('button', { name: 'Cancella e ripristina' });
 		assert.equal(await final.isEnabled(), true);
+		const confirmationBox = await page.getByRole('dialog').boundingBox();
+		const finalBox = await final.boundingBox();
+		assert.ok(
+			Math.abs(confirmationBox.x + confirmationBox.width / 2 - finalBox.x - finalBox.width / 2) < 1
+		);
 		assert.equal(await page.getByRole('dialog').getByRole('textbox').count(), 0);
 		assert.equal(await page.getByRole('dialog').getByRole('button').count(), 2);
 		await page.screenshot({ path: 'Output/Validation/Interface/confirmation.png' });
