@@ -224,6 +224,44 @@ function Test-VolumesOffline([int]$number) {
 	return $true
 }
 
+function Save-DiskState($disk) {
+	$state = [pscustomobject]@{ disk = $disk; partitions = @() }
+	if ($disk.offline) { return $state }
+	. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+	foreach ($partition in @(Get-Partition -DiskNumber $disk.number -ErrorAction SilentlyContinue | Where-Object Type -ne 'Reserved')) {
+		$paths = @($partition.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })
+		$offline = [bool]$partition.IsOffline
+		if (!$offline -and $paths.Count) { $offline = [FfuVolume]::IsOffline($paths[0]) }
+		$state.partitions += [pscustomobject]@{ number = $partition.PartitionNumber; offline = $offline }
+	}
+	return $state
+}
+
+function Restore-DiskState($state) {
+	$current = Get-Disks | Where-Object number -eq $state.disk.number
+	if (!$current -or (Identity $state.disk) -cne (Identity $current) -or $current.system -or $current.boot -or $current.paging) {
+		throw 'Disk identity or protection changed; its original state could not be restored.'
+	}
+	if ($current.offline -ne $state.disk.offline) {
+		Set-Disk -Number $current.number -IsOffline $state.disk.offline
+	}
+	if ($state.disk.offline) { return }
+	. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+	foreach ($original in $state.partitions) {
+		$partition = Get-Partition -DiskNumber $current.number -PartitionNumber $original.number -ErrorAction SilentlyContinue
+		if (!$partition -or $partition.Type -eq 'Reserved') { continue }
+		if ($partition.IsOffline -ne $original.offline) {
+			$partition | Set-Partition -IsOffline $original.offline
+			$partition = Get-Partition -DiskNumber $current.number -PartitionNumber $original.number
+		}
+		$paths = @($partition.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })
+		foreach ($volume in $paths) {
+			if ($original.offline) { [FfuVolume]::Offline($volume) }
+			else { [FfuVolume]::Online($volume) }
+		}
+	}
+}
+
 try {
 	$admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 	if ($Action -eq 'environment') { [pscustomobject]@{ admin = $admin } | ConvertTo-Json -Compress; exit 0 }
@@ -262,21 +300,34 @@ try {
 		$current = Get-Disks | Where-Object number -eq $request.disk.number
 		Check-Disk $request.disk $current
 		Check-Cancel
+		$originalState = Save-DiskState $current
 		Report ('Paths before preparation: ' + ($current.accessPaths -join ' | '))
-		Report 'FFU_STAGE:Preparing disk'
-		Prepare-Disk $current
-		$current = Get-Disks | Where-Object number -eq $request.disk.number
-		if ($request.mode -eq 'apply' -and $current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
-		Check-Disk $request.disk $current ($request.mode -eq 'apply')
-		if ($request.mode -eq 'capture' -and $current.offline) { throw 'Capture requires an online source disk.' }
-		$image = Image-Path $image ($request.mode -eq 'apply')
-		$device = '\\.\PhysicalDrive' + $current.number
-		if ($request.mode -eq 'capture') {
-			Capture-Image $image $device $session
+		try {
+			Report 'FFU_STAGE:Preparing disk'
+			Prepare-Disk $current
+			$current = Get-Disks | Where-Object number -eq $request.disk.number
+			if ($request.mode -eq 'apply' -and $current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
+			Check-Disk $request.disk $current ($request.mode -eq 'apply')
+			if ($request.mode -eq 'capture' -and $current.offline) { throw 'Capture requires an online source disk.' }
+			$image = Image-Path $image ($request.mode -eq 'apply')
+			$device = '\\.\PhysicalDrive' + $current.number
+			if ($request.mode -eq 'capture') {
+				Capture-Image $image $device $session
+			}
+			else {
+				Report 'FFU_STAGE:Restoring'
+				Dism @('/English', '/Apply-FFU', "/ImageFile:$image", "/ApplyDrive:$device", "/LogPath:$session-dism.log")
+			}
 		}
-		else {
-			Report 'FFU_STAGE:Restoring'
-			Dism @('/English', '/Apply-FFU', "/ImageFile:$image", "/ApplyDrive:$device", "/LogPath:$session-dism.log")
+		catch {
+			try { Report ('Operation error: ' + $_.Exception.Message) } catch { }
+			throw
+		}
+		finally {
+			try {
+				Restore-DiskState $originalState
+				Report 'Original disk state restored.'
+			} catch { throw "Could not restore the original disk state: $($_.Exception.Message)" }
 		}
 		Report ('FFU_RESULT:' + (@{ success = $true; image = $image; logPath = $sessionLog } | ConvertTo-Json -Compress))
 	}

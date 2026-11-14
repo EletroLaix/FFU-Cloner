@@ -1,4 +1,4 @@
-param([ValidateSet('prepare', 'clear', 'online')][string]$Action, [int]$Number, [string]$UniqueId, [string]$Serial, [UInt64]$Size, [string]$OutputPath, [string]$AppPath)
+param([ValidateSet('prepare', 'clear', 'online', 'offline')][string]$Action, [int]$Number, [string]$UniqueId, [string]$Serial, [UInt64]$Size, [string]$OutputPath, [string]$AppPath)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -24,6 +24,10 @@ try {
 		# Keep the fixture small even when the sacrificial disk has terabytes of capacity.
 		$p = New-Partition -DiskNumber $Number -Size 512MB -AssignDriveLetter
 		$p | Format-Volume -FileSystem NTFS -NewFileSystemLabel 'FFU_TEST' -Confirm:$false | Out-Null
+	}
+	elseif ($Action -eq 'offline') {
+		Set-Disk -Number $Number -IsOffline $true
+		exit 0
 	}
 	elseif ($Action -eq 'clear') {
 		Set-Disk -Number $Number -IsOffline $false

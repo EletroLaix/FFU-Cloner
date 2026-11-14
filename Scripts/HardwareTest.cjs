@@ -131,6 +131,8 @@ function hash(file) {
 	);
 	log('PASS: image on source disk rejected.');
 	const cancelledImage = path.join(output, 'cancelled.ffu');
+	storage('offline');
+	assert.equal((await currentDisk()).offline, true);
 	const cancel = new AbortController();
 	await assert.rejects(
 		engine.clone(
@@ -149,6 +151,8 @@ function hash(file) {
 		false
 	);
 	log('PASS: capture cancellation before DISM leaves no image or partial file.');
+	assert.equal((await currentDisk()).offline, true, 'Offline source state after cancellation');
+	storage('online');
 	async function cancelDuringOperation(mode) {
 		const controller = new AbortController();
 		let reachedProgress = false;
@@ -182,10 +186,25 @@ function hash(file) {
 		log('PASS: ' + mode + ' cancellation after DISM progress; operation can be retried.');
 	}
 	await cancelDuringOperation('capture');
-	await engine.clone(
-		{ ...request, mode: 'capture', disk: (await engine.listDisks()).find((d) => d.number === number) },
-		progress
+	assert.equal((await currentDisk()).offline, false, 'Online source state after cancellation');
+	fs.writeFileSync(image, 'ORIGINAL IMAGE');
+	const originalStat = fs.statSync(image);
+	const overwrite = { size: originalStat.size, modified: Math.floor(originalStat.mtimeMs) };
+	const cancelReplacement = new AbortController();
+	await assert.rejects(
+		engine.clone(
+			{ ...request, mode: 'capture', disk: await currentDisk(), overwrite },
+			(update) => {
+				if (update.stage === 'Capturing') cancelReplacement.abort();
+			},
+			cancelReplacement.signal
+		),
+		(error) => error.code === 'CANCELLED'
 	);
+	assert.equal(fs.readFileSync(image, 'utf8'), 'ORIGINAL IMAGE');
+	log('PASS: cancelled replacement preserved the original image.');
+	await engine.clone({ ...request, mode: 'capture', disk: await currentDisk(), overwrite }, progress);
+	assert.equal((await currentDisk()).offline, false, 'Online source state after capture');
 	log('Capture succeeded; removing partition table before apply.');
 	storage('clear');
 	const cancelApply = new AbortController();
@@ -201,11 +220,18 @@ function hash(file) {
 		(error) => error.code === 'CANCELLED'
 	);
 	log('PASS: restore cancellation before DISM; retrying the same target.');
+	assert.equal((await currentDisk()).offline, false, 'Online target state after cancellation');
 	await cancelDuringOperation('apply');
+	assert.equal((await currentDisk()).offline, false, 'Online target state after interrupted restore');
 	await engine.clone(
 		{ ...request, mode: 'apply', disk: (await engine.listDisks()).find((d) => d.number === number) },
 		progress
 	);
+	assert.equal((await currentDisk()).offline, false, 'Online target state after restore');
+	storage('offline');
+	await engine.clone({ ...request, mode: 'apply', disk: await currentDisk() }, progress);
+	assert.equal((await currentDisk()).offline, true, 'Offline target state after restore');
+	log('PASS: initially offline target returned offline after restore.');
 	const restored = storage('online');
 	assert.deepEqual(restored.layout, reference.layout, 'Partition layout');
 	for (const [name, expected] of Object.entries(hashes)) {
