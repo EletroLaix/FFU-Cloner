@@ -9,9 +9,13 @@
 ### BugFix
 
 - Install and verify the Electron runtime before starting a Visual Studio Code debug session.
+- Explain that FFU capture requires GPT and does not support MBR, instead of leaving the disk lock open to interpretation.
+- Bring source volumes online for capture so DISM can read filesystem metadata; keep offline preparation and verification for restore targets. This fixes DISM error 21 on an offline USB source.
 
 ### Resources
 
+- Adapt destructive USB integration tests to exactly identified disks of different capacities, with a bounded 512 MiB fixture, real cancellation checks and source-path rejection.
+- Remove the README license badge and section; GitHub exposes the root license file.
 - Display test, compilation, packaging and deployment as separate release workflow jobs.
 - Name the Windows installer `FFU Cloner [version].msi`.
 - Refresh the README with a direct release link and document the Develop-to-Master release process.
@@ -22,7 +26,7 @@
 
 ### Known issues
 
-- No physical test disk is currently available; checks use simulated engines, data and processes.
+- Boot validation on an intended target machine is still required.
 - The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
 - FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
 
