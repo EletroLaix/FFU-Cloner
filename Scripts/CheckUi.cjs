@@ -47,6 +47,15 @@ const fs = require('node:fs');
 						uniqueId: 'TEST'
 					},
 					{
+						token: 'mbr',
+						number: 2,
+						name: 'MBR USB',
+						size: 2000398934016,
+						bus: 'USB',
+						style: 'MBR',
+						uniqueId: 'MBR-TEST'
+					},
+					{
 						token: 'protected',
 						number: 0,
 						name: 'SAMSUNG NVMe',
@@ -91,7 +100,8 @@ const fs = require('node:fs');
 		await page.getByRole('radio').first().waitFor();
 		await page.waitForFunction(() => window.__sizes.length > 0);
 		const fullHeight = await page.evaluate(() => window.__sizes.at(-1));
-		assert.equal(await page.getByRole('radio').nth(1).isDisabled(), true);
+		assert.equal(await page.getByRole('radio', { name: /SAMSUNG NVMe/ }).isDisabled(), true);
+		assert.equal(await page.getByRole('radio', { name: /MBR USB/ }).isEnabled(), true);
 		await page.getByRole('button', { name: 'Seleziona immagine FFU' }).click();
 		const imageBox = await page.locator('.image-card').boundingBox();
 		const diskBox = await page.locator('.disk-card').boundingBox();
@@ -107,6 +117,11 @@ const fs = require('node:fs');
 		await start.click();
 		const final = page.getByRole('button', { name: 'Cancella e ripristina' });
 		assert.equal(await final.isEnabled(), true);
+		const confirmationBox = await page.getByRole('dialog').boundingBox();
+		const finalBox = await final.boundingBox();
+		assert.ok(
+			Math.abs(confirmationBox.x + confirmationBox.width / 2 - finalBox.x - finalBox.width / 2) < 1
+		);
 		assert.equal(await page.getByRole('dialog').getByRole('textbox').count(), 0);
 		assert.equal(await page.getByRole('dialog').getByRole('button').count(), 2);
 		await page.screenshot({ path: 'Output/Validation/Interface/confirmation.png' });
@@ -169,6 +184,9 @@ const fs = require('node:fs');
 		await page.getByText('Operazione interrotta', { exact: true }).waitFor();
 		await page.getByText('Il disco è incompleto.', { exact: false }).waitFor();
 		await page.getByRole('button', { name: 'Acquisisci', exact: true }).click();
+		const mbr = page.getByRole('radio', { name: /MBR USB/ });
+		assert.equal(await mbr.isDisabled(), true);
+		assert.match(await mbr.textContent(), /GPT.*MBR/);
 		assert.equal(await page.locator('.workflow .card h2').first().textContent(), 'Disco sorgente');
 		await page.screenshot({ path: 'Output/Validation/Interface/capture.png' });
 		await page.getByRole('radio').first().click();
@@ -214,6 +232,45 @@ const fs = require('node:fs');
 		}
 		await page.reload();
 		assert.equal(await page.locator('html').getAttribute('lang'), 'it');
+		await page.getByRole('radio').first().waitFor();
+		await page.setViewportSize({ width: 860, height: 721 });
+		const outerSpacing = () =>
+			page.locator('.app-shell').evaluate((element) => {
+				const style = getComputedStyle(element);
+				return {
+					left: style.paddingLeft,
+					right: style.paddingRight,
+					top: style.paddingTop,
+					bottom: style.paddingBottom
+				};
+			});
+		const fullSpacing = await outerSpacing();
+		assert.deepEqual(fullSpacing, { left: '20px', right: '20px', top: '16px', bottom: '12px' });
+		assert.ok(
+			await page
+				.locator('footer')
+				.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+		);
+		await page.getByRole('radio').first().click();
+		await page.getByTestId('pick-image').click();
+		for (const width of [860, 1120]) {
+			await page.setViewportSize({ width, height: 512 });
+			for (const name of ['English', 'Deutsch', 'Français', 'Español', 'Polski', 'Italiano']) {
+				await page.getByTestId('language-toggle').click();
+				await page.getByRole('menuitemradio', { name: new RegExp(name) }).click();
+				assert.deepEqual(await outerSpacing(), fullSpacing);
+				assert.ok(
+					await page
+						.locator('footer')
+						.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight),
+					`${name}: footer is visible at ${width}px`
+				);
+				assert.ok(
+					await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+					`${name}: no horizontal overflow at ${width}px`
+				);
+			}
+		}
 
 		console.log(
 			'UI PASS: protected disks, mode order, single-button confirmation, cancel, simulated success, minimum layout; no page errors.'

@@ -4,12 +4,12 @@
 		{
 			"name": "Electron main process",
 			"type": "node",
-			"request": "launch",
+			"request": "attach",
 			"cwd": "${workspaceFolder}",
-			"runtimeExecutable": "${workspaceFolder}/node_modules/electron/dist/electron.exe",
-			"args": [".", "--remote-debugging-port=9223"],
-			"env": { "ELECTRON_RUN_AS_NODE": null },
-			"console": "integratedTerminal",
+			"address": "127.0.0.1",
+			"port": 9229,
+			"timeout": 60000,
+			"continueOnAttach": true,
 			"presentation": { "hidden": true },
 			"skipFiles": ["<node_internals>/**"]
 		},
@@ -19,7 +19,7 @@
 			"request": "attach",
 			"port": 9223,
 			"webRoot": "${workspaceFolder}",
-			"timeout": 30000,
+			"timeout": 60000,
 			"sourceMaps": true,
 			"presentation": { "hidden": true }
 		}

@@ -1,5 +1,48 @@
 # FFU Cloner Changelog
 
+## Release: 0.1.2
+
+<div class="Subtitle"><strong>Build:</strong> 0.1.2 <strong>Date:</strong> 14/11/2026</div>
+
+### Features
+
+- None.
+
+### BugFix
+
+- Reduce the window's outer spacing consistently in both full and compact layouts.
+- Keep the window width and its full and compact heights stable throughout selection and operation progress.
+- Restore the selected disk's original online or offline state after operations, including cancellation and errors.
+- Honor a confirmed existing FFU destination and replace it only after capture succeeds.
+- Center the restore confirmation button.
+- Install and verify the Electron runtime before starting a Visual Studio Code debug session.
+- Explain that FFU capture requires GPT and does not support MBR, instead of leaving the disk lock open to interpretation.
+- Bring source volumes online for capture so DISM can read filesystem metadata; keep offline preparation and verification for restore targets. This fixes DISM error 21 on an offline USB source.
+- Request administrator elevation when starting an Electron debug session from Visual Studio Code.
+- Let the Visual Studio Code preparation task finish after starting elevated Electron, so the debugger can attach and open the app.
+- Signal Visual Studio Code when elevated Electron is ready even if Windows keeps the task terminal alive.
+- Show the Electron window when starting an elevated debug session.
+- Keep modal dialogs out of the draggable title bar so the logs close button responds where it is drawn.
+- Allow the installed app to open without administrator privileges; disk operations still require elevation.
+
+### Resources
+
+- Adapt destructive USB integration tests to exactly identified disks of different capacities, with a bounded 512 MiB fixture, real cancellation checks and source-path rejection.
+- Remove the README license badge and section; GitHub exposes the root license file.
+- Display test, compilation, packaging and deployment as separate release workflow jobs.
+- Name the Windows installer `FFU Cloner [version].msi`.
+- Refresh the README with a direct release link and document the Develop-to-Master release process.
+- Adopt GPL-3.0-only for the project source code.
+- Include the complete GPLv3 license in the repository and installed application.
+- Remove the obsolete portable launcher diagnostic and its retired runtime references.
+- Simplify the README build instructions.
+
+### Known issues
+
+- Boot validation on an intended target machine is still required.
+- The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
+- FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
+
 ## Release: 0.1.1
 
 <div class="Subtitle"><strong>Build:</strong> 0.1.1 <strong>Date:</strong> 14/11/2026</div>

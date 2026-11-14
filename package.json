@@ -1,9 +1,10 @@
 {
 	"name": "ffu-cloner",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"private": true,
 	"description": "FFU disk capture and restore tool",
 	"author": "Marino Adriani",
+	"license": "GPL-3.0-only",
 	"main": "Source/Application/Main.cjs",
 	"scripts": {
 		"dev": "vite --host 127.0.0.1",
@@ -19,7 +20,7 @@
 	},
 	"build": {
 		"appId": "io.marinoandriani.ffucloner",
-		"artifactName": "FFU-Cloner-${version}-${arch}-Setup.${ext}",
+		"artifactName": "FFU Cloner [${version}].${ext}",
 		"productName": "FFU Cloner",
 		"directories": {
 			"output": "Output/Installer"
@@ -31,6 +32,7 @@
 			"Source/Resources/Images/Icon.png",
 			"package.json"
 		],
+		"extraFiles": ["LICENSE.md"],
 		"asar": true,
 		"asarUnpack": [
 			"Source/Application/Windows/*.ps1"
@@ -39,7 +41,7 @@
 			"target": [
 				"msi"
 			],
-			"requestedExecutionLevel": "requireAdministrator",
+			"requestedExecutionLevel": "asInvoker",
 			"icon": "Source/Resources/Images/Icon.ico"
 		},
 		"msi": {

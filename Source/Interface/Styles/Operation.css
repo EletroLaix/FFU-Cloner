@@ -1,7 +1,3 @@
-.running .operation {
-	margin-top: 24px;
-	padding: 25px;
-}
 .running footer {
 	justify-content: flex-end;
 }
@@ -255,11 +251,11 @@
 	line-height: 1.7;
 }
 .operation {
-	margin-top: 22px;
+	margin-top: 16px;
 	background: linear-gradient(110deg, #171411, #121212 75%);
 	border: 1px solid #3b2a1f;
 	border-radius: 13px;
-	padding: 21px;
+	padding: 19px;
 }
 .operation-row {
 	display: flex;
@@ -381,7 +377,7 @@ footer {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding-top: 21px;
+	padding-top: 12px;
 	font-size: 9px;
 	color: #686868;
 }

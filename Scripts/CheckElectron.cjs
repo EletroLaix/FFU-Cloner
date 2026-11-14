@@ -92,6 +92,27 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await page.getByTestId('open-logs').click();
 		const logsDialog = page.getByRole('dialog');
 		await logsDialog.locator('.log-time').waitFor();
+		const closeLogs = logsDialog.locator('.logs-heading .icon-button');
+		const closeBox = await closeLogs.boundingBox();
+		const closeIcon = await closeLogs.locator('svg').boundingBox();
+		assert.ok(Math.abs(closeBox.x + closeBox.width / 2 - closeIcon.x - closeIcon.width / 2) < 1);
+		assert.ok(Math.abs(closeBox.y + closeBox.height / 2 - closeIcon.y - closeIcon.height / 2) < 1);
+		assert.equal(
+			await logsDialog.evaluate((element) =>
+				getComputedStyle(element.closest('.modal-backdrop')).getPropertyValue('-webkit-app-region')
+			),
+			'no-drag'
+		);
+		await page.mouse.move(closeIcon.x + closeIcon.width / 2, closeIcon.y + closeIcon.height / 2);
+		assert.equal(await closeLogs.evaluate((element) => element.matches(':hover')), true);
+		await page.waitForFunction(() => {
+			const button = document.querySelector('.logs-heading .icon-button');
+			return button && getComputedStyle(button).backgroundColor !== 'rgba(0, 0, 0, 0)';
+		});
+		assert.notEqual(
+			await closeLogs.evaluate((element) => getComputedStyle(element).backgroundColor),
+			'rgba(0, 0, 0, 0)'
+		);
 		assert.equal(await logsDialog.locator('.log-time').textContent(), '2026-11-13T12:34:56Z');
 		assert.match(await logsDialog.locator('.logs-content').textContent(), /Simulated log entry/);
 		assert.equal(
@@ -104,6 +125,10 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await logsDialog.locator('.logs-button').last().click();
 		assert.equal(await app.evaluate(() => globalThis.logFolder), logDirectory);
 		await page.keyboard.press('Escape');
+		await logsDialog.waitFor({ state: 'hidden' });
+		await page.getByTestId('open-logs').click();
+		await logsDialog.locator('.log-time').waitFor();
+		await logsDialog.locator('.logs-heading .icon-button').click();
 		await logsDialog.waitFor({ state: 'hidden' });
 		const nativeCalls = await app.evaluate(() => globalThis.nativeCalls);
 		assert.ok(nativeCalls.open >= 1 && nativeCalls.save >= 1 && nativeCalls.logs >= 1);
@@ -145,7 +170,12 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 				dialog.showOpenDialog = saved.open;
 				dialog.showSaveDialog = saved.save;
 			};
-			const image = require('node:path').join(app.getPath('temp'), 'FFU-Test-' + Date.now() + '.ffu');
+			const image = require('node:path').join(
+				process.env.LOCALAPPDATA,
+				'FFU-Test-' + Date.now() + '.ffu'
+			);
+			require('node:fs').writeFileSync(image, 'EXISTING IMAGE');
+			globalThis.testImage = image;
 			engine.listDisks = async () => [
 				{ number: 1, name: 'Simulated drive', size: 32017047552, uniqueId: 'TEST', style: 'GPT' }
 			];
@@ -155,7 +185,10 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 			engine.clone = async (_request, _progress, signal) =>
 				new Promise((_resolve, reject) => {
 					globalThis.cloneStarted = true;
+					globalThis.cloneRequest = _request;
 					globalThis.cloneProgress = _progress;
+					globalThis.finishClone = _resolve;
+					globalThis.failClone = reject;
 					signal.addEventListener(
 						'abort',
 						() => reject(Object.assign(new Error('Operation cancelled.'), { code: 'CANCELLED' })),
@@ -166,16 +199,42 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await page.reload();
 		await page.getByRole('radio').first().waitFor();
 		await page.waitForTimeout(200);
+		await app.evaluate(({ BrowserWindow }) => {
+			const window = BrowserWindow.getAllWindows()[0];
+			globalThis.resizeHistory = [];
+			window.on('resize', () => globalThis.resizeHistory.push(window.getBounds()));
+		});
 		const fullHeight = await app.evaluate(
 			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
 		);
+		const fixedWidth = await app.evaluate(
+			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().width
+		);
+		const contentWidth = await page.evaluate(() => document.documentElement.clientWidth);
 		await page.getByRole('radio').first().click();
+		assert.equal(
+			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height),
+			fullHeight
+		);
 		await page.getByTestId('pick-image').click();
 		await page.waitForTimeout(200);
 		const compactHeight = await app.evaluate(
 			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
 		);
 		assert.ok(compactHeight < fullHeight - 100, `Dynamic height: ${fullHeight} -> ${compactHeight}`);
+		assert.equal(await page.evaluate(() => document.documentElement.clientWidth), contentWidth);
+		assert.ok(
+			await page
+				.locator('footer')
+				.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+		);
+		await page.locator('.operation .primary').click();
+		await page.getByRole('dialog').waitFor();
+		assert.equal(
+			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height),
+			compactHeight
+		);
+		await page.keyboard.press('Escape');
 		assert.equal(
 			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isResizable()),
 			false
@@ -201,6 +260,18 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 			await page.locator('.operation .primary').click();
 			await page.getByTestId('cancel-operation').waitFor();
 			await app.evaluate(() => globalThis.cloneProgress({ percent: 15, bytesPerSecond: 1000000 }));
+			await page.waitForTimeout(200);
+			const runningBounds = await app.evaluate(({ BrowserWindow }) =>
+				BrowserWindow.getAllWindows()[0].getBounds()
+			);
+			assert.equal(runningBounds.height, compactHeight, 'Graph must not change compact height');
+			assert.equal(runningBounds.width, fixedWidth, 'Graph must not change width');
+			assert.equal(await page.evaluate(() => document.documentElement.clientWidth), contentWidth);
+			assert.ok(
+				await page
+					.locator('footer')
+					.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+			);
 			await page.getByTestId('cancel-operation').click();
 			await page.getByRole('radio').first().waitFor();
 			await page.waitForTimeout(200);
@@ -216,6 +287,34 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 				'Image description is not clipped'
 			);
 		}
+		for (const outcome of ['success', 'failure']) {
+			await page.getByRole('radio').first().click();
+			await page.getByTestId('pick-image').click();
+			await page.locator('.operation .primary').click();
+			await page.getByTestId('cancel-operation').waitFor();
+			await app.evaluate((outcome) => {
+				if (outcome === 'success') globalThis.finishClone({ success: true });
+				else globalThis.failClone(new Error('Simulated failure'));
+			}, outcome);
+			await page.getByRole('radio').first().waitFor();
+			await page.waitForTimeout(200);
+			assert.equal(
+				await app.evaluate(
+					({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
+				),
+				fullHeight,
+				`Full height restored after ${outcome}`
+			);
+		}
+		const resizeHistory = await app.evaluate(() => globalThis.resizeHistory);
+		assert.ok(
+			resizeHistory.every((bounds) => bounds.width === fixedWidth),
+			'Window width stays fixed'
+		);
+		assert.ok(
+			resizeHistory.every((bounds) => bounds.height === fullHeight || bounds.height === compactHeight),
+			'Only full and compact heights are used'
+		);
 		for (const mode of ['apply', 'capture']) {
 			await app.evaluate(() => {
 				globalThis.cloneStarted = false;
@@ -242,11 +341,17 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 					await new Promise((resolve) => setTimeout(resolve, 25));
 				if (!globalThis.cloneStarted) throw new Error('Simulated engine did not start');
 			});
+			if (mode === 'capture') {
+				const overwrite = await app.evaluate(() => globalThis.cloneRequest.overwrite);
+				assert.equal(overwrite.size, Buffer.byteLength('EXISTING IMAGE'));
+				assert.equal(typeof overwrite.modified, 'number');
+			}
 			assert.equal(await page.evaluate(() => window.ffu.cancelClone()), true);
 			assert.equal(await page.evaluate(() => window.pendingClone), 'CANCELLED');
 			assert.equal(await page.evaluate(() => window.ffu.cancelClone()), false);
 		}
 		await app.evaluate(() => globalThis.restoreEngine());
+		await app.evaluate(() => process.getBuiltinModule('fs').unlinkSync(globalThis.testImage));
 		await page.getByTestId('minimize-window').click();
 		await app.evaluate(async ({ BrowserWindow }) => {
 			const window = BrowserWindow.getAllWindows()[0];

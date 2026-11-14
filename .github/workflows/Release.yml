@@ -8,10 +8,9 @@ permissions:
   contents: read
 
 jobs:
-  release:
-    runs-on: windows-latest
-    permissions:
-      contents: write
+  tests:
+    name: Tests and release checks
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,30 +18,82 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
       - name: Verify release source and version
-        shell: pwsh
         run: |
           git fetch origin Master:refs/remotes/origin/Master
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          git merge-base --is-ancestor $env:GITHUB_SHA refs/remotes/origin/Master
-          if ($LASTEXITCODE -ne 0) { throw 'Release tags must point to a commit on Master.' }
-          node Scripts/PrepareRelease.cjs $env:GITHUB_REF_NAME
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/Master
+          node Scripts/PrepareRelease.cjs "$GITHUB_REF_NAME"
+      - name: Report local tests
+        run: echo 'Tests are run locally; this workflow does not run or verify them.'
+
+  compilation:
+    name: Compilation
+    needs: tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Tests (run locally)
-        run: Write-Output 'Tests are run locally; this workflow does not run or verify them.'
       - name: Compile application
         run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renderer
+          path: Output/Renderer/
+          if-no-files-found: error
+          retention-days: 1
+
+  package:
+    name: Package
+    needs: compilation
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: renderer
+          path: Output/Renderer/
       - name: Build MSI package
         run: node node_modules/electron-builder/cli.js --win msi --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: Output/Installer/*.msi
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: installer
+          path: Output/Installer/
+      - name: Prepare release notes
+        run: node Scripts/PrepareRelease.cjs "$GITHUB_REF_NAME"
       - name: Deploy GitHub Release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $installers = @(Get-ChildItem -LiteralPath Output/Installer -Filter '*.msi')
-          if ($installers.Count -ne 1) { throw 'Expected exactly one MSI installer.' }
-          gh release create $env:GITHUB_REF_NAME $installers[0].FullName --verify-tag --title "FFU Cloner $env:GITHUB_REF_NAME" --notes-file Output/Release/Notes.md
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          shopt -s nullglob
+          installers=(Output/Installer/*.msi)
+          if (( ${#installers[@]} != 1 )); then echo 'Expected exactly one MSI installer.' >&2; exit 1; fi
+          gh release create "$GITHUB_REF_NAME" "${installers[0]}" --verify-tag --title "FFU Cloner $GITHUB_REF_NAME" --notes-file Output/Release/Notes.md

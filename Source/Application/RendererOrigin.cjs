@@ -2,8 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { fileURLToPath } = require('node:url');
 
-// The portable launcher can use Windows 8.3 paths while Electron resolves the
-// same archive through its long path. Compare physical files, not URL strings.
+// Windows paths can have short and long forms. Compare physical files, not URL strings.
 function canonicalFile(file) {
 	const parts = path.resolve(file).split(path.sep);
 	const archive = parts.findIndex((part) => part.toLowerCase().endsWith('.asar'));

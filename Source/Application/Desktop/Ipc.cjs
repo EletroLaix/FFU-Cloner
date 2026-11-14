@@ -42,8 +42,7 @@ module.exports = function registerIpc(window, indexFile) {
 	handle('minimize-window', () => window.minimize());
 	handle('close-window', () => window.close());
 	handle('fit-window', (height) => {
-		if (!Number.isSafeInteger(height) || height < 1 || height > 10000)
-			throw new Error('Invalid window height.');
+		if (![512, 721].includes(height)) throw new Error('Invalid window height.');
 		const bounds = window.getBounds();
 		const area = screen.getDisplayMatching(bounds).workArea;
 		height = Math.min(Math.max(320, height), area.height);
@@ -80,9 +79,13 @@ module.exports = function registerIpc(window, indexFile) {
 					});
 		if (result.canceled) return null;
 		const image = result.filePath || result.filePaths[0];
-		if (mode === 'capture' && fs.existsSync(image))
-			throw new Error('The file already exists. Choose a new name.');
-		chosenImage = { mode, path: image };
+		let overwrite = null;
+		if (mode === 'capture' && fs.existsSync(image)) {
+			const stat = fs.lstatSync(image);
+			if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Invalid image file.');
+			overwrite = { size: stat.size, modified: Math.floor(stat.mtimeMs) };
+		}
+		chosenImage = { mode, path: image, overwrite };
 		return { path: image, name: path.basename(image) };
 	});
 	handle('start-clone', async (request) => {
@@ -103,15 +106,11 @@ module.exports = function registerIpc(window, indexFile) {
 					mode: request.mode,
 					disk,
 					image: chosenImage.path,
+					overwrite: chosenImage.overwrite,
 					confirmed: request.confirmed === true,
 					logDirectory,
 					version: app.getVersion(),
-					appPaths: [
-						process.execPath,
-						...(process.env.PORTABLE_EXECUTABLE_FILE
-							? [process.env.PORTABLE_EXECUTABLE_FILE]
-							: [])
-					]
+					appPaths: [process.execPath]
 				},
 				(update) => {
 					if (update.logPath) lastLog = update.logPath;

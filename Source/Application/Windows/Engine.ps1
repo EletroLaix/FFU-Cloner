@@ -42,7 +42,7 @@ function Image-Path([string]$value, [bool]$mustExist) {
 	$full = [IO.Path]::GetFullPath($value)
 	if ([IO.Path]::GetExtension($full) -ine '.ffu') { throw 'The file must have the .ffu extension.' }
 	if ($mustExist -and ![IO.File]::Exists($full)) { throw 'Image not found.' }
-	if (!$mustExist -and (Test-Path -LiteralPath $full)) { throw 'The file already exists. Choose a new name.' }
+	if (!$mustExist) { Check-Output $full }
 	$directory = [IO.Path]::GetDirectoryName($full)
 	if (![IO.Directory]::Exists($directory)) { throw 'The destination directory does not exist.' }
 	$item = if ($mustExist) { $full } else { $directory }
@@ -51,6 +51,21 @@ function Image-Path([string]$value, [bool]$mustExist) {
 		$item = [IO.Path]::GetDirectoryName($item)
 	}
 	return $full
+}
+
+function Check-Output([string]$image) {
+	$exists = [IO.File]::Exists($image)
+	if (!$request.overwrite) {
+		if (Test-Path -LiteralPath $image) { throw 'The file already exists. Choose a new name.' }
+		return
+	}
+	if (!$exists) { throw 'The selected image has changed. Select it again.' }
+	$file = Get-Item -LiteralPath $image -Force
+	if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+		$file.Length -ne $request.overwrite.size -or
+		([DateTimeOffset]$file.LastWriteTimeUtc).ToUnixTimeMilliseconds() -ne $request.overwrite.modified) {
+		throw 'The selected image has changed. Select it again.'
+	}
 }
 
 function Path-Disk([string]$value) {
@@ -154,7 +169,15 @@ function Capture-Image([string]$image, [string]$device, [string]$session) {
 		Report 'FFU_STAGE:Capturing'
 		Dism @('/English', '/Capture-FFU', "/ImageFile:$working", "/CaptureDrive:$device", "/Name:$name", '/Compress:default', "/LogPath:$session-dism.log")
 		if (![IO.File]::Exists($working) -or (Get-Item -LiteralPath $working).Length -le 0) { throw 'DISM did not produce a valid FFU.' }
-		[IO.File]::Move($working, $image)
+		Check-Output $image
+		if ($request.overwrite) {
+			# Windows PowerShell 5.1 converts a null string argument to an empty path.
+			if (-not ('FfuFileReplace' -as [type])) {
+				Add-Type 'public static class FfuFileReplace { public static void Replace(string source, string destination) { System.IO.File.Replace(source, destination, null); } }'
+			}
+			[FfuFileReplace]::Replace($working, $image)
+		}
+		else { [IO.File]::Move($working, $image) }
 	}
 	finally {
 		# Dism waits for the process tree to exit before control reaches this block.
@@ -166,6 +189,18 @@ function Capture-Image([string]$image, [string]$device, [string]$session) {
 
 function Prepare-Disk($disk) {
 	Check-Cancel
+	if ($request.mode -eq 'capture') {
+		# DISM must open volumes to read filesystem metadata before it locks them for capture.
+		# Offlining the source prevents that discovery and produces ERROR_NOT_READY (21).
+		if ($disk.offline) { Set-Disk -Number $disk.number -IsOffline $false }
+		. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+		Get-Partition -DiskNumber $disk.number | Where-Object Type -ne 'Reserved' | ForEach-Object {
+			Check-Cancel
+			if ($_.IsOffline) { $_ | Set-Partition -IsOffline $false }
+			foreach ($volume in @($_.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })) { [FfuVolume]::Online($volume) }
+		}
+		return
+	}
 	if ($disk.offline -or $disk.volumesOffline) { return }
 	if (!$disk.removable) { Set-Disk -Number $disk.number -IsOffline $true; return }
 	# Windows cannot offline an entire removable disk. Offline every volume, including EFI.
@@ -187,6 +222,44 @@ function Test-VolumesOffline([int]$number) {
 		foreach ($volume in $paths) { if (![FfuVolume]::IsOffline($volume)) { return $false } }
 	}
 	return $true
+}
+
+function Save-DiskState($disk) {
+	$state = [pscustomobject]@{ disk = $disk; partitions = @() }
+	if ($disk.offline) { return $state }
+	. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+	foreach ($partition in @(Get-Partition -DiskNumber $disk.number -ErrorAction SilentlyContinue | Where-Object Type -ne 'Reserved')) {
+		$paths = @($partition.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })
+		$offline = [bool]$partition.IsOffline
+		if (!$offline -and $paths.Count) { $offline = [FfuVolume]::IsOffline($paths[0]) }
+		$state.partitions += [pscustomobject]@{ number = $partition.PartitionNumber; offline = $offline }
+	}
+	return $state
+}
+
+function Restore-DiskState($state) {
+	$current = Get-Disks | Where-Object number -eq $state.disk.number
+	if (!$current -or (Identity $state.disk) -cne (Identity $current) -or $current.system -or $current.boot -or $current.paging) {
+		throw 'Disk identity or protection changed; its original state could not be restored.'
+	}
+	if ($current.offline -ne $state.disk.offline) {
+		Set-Disk -Number $current.number -IsOffline $state.disk.offline
+	}
+	if ($state.disk.offline) { return }
+	. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+	foreach ($original in $state.partitions) {
+		$partition = Get-Partition -DiskNumber $current.number -PartitionNumber $original.number -ErrorAction SilentlyContinue
+		if (!$partition -or $partition.Type -eq 'Reserved') { continue }
+		if ($partition.IsOffline -ne $original.offline) {
+			$partition | Set-Partition -IsOffline $original.offline
+			$partition = Get-Partition -DiskNumber $current.number -PartitionNumber $original.number
+		}
+		$paths = @($partition.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })
+		foreach ($volume in $paths) {
+			if ($original.offline) { [FfuVolume]::Offline($volume) }
+			else { [FfuVolume]::Online($volume) }
+		}
+	}
 }
 
 try {
@@ -227,20 +300,34 @@ try {
 		$current = Get-Disks | Where-Object number -eq $request.disk.number
 		Check-Disk $request.disk $current
 		Check-Cancel
+		$originalState = Save-DiskState $current
 		Report ('Paths before preparation: ' + ($current.accessPaths -join ' | '))
-		Report 'FFU_STAGE:Preparing disk'
-		Prepare-Disk $current
-		$current = Get-Disks | Where-Object number -eq $request.disk.number
-		if ($current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
-		Check-Disk $request.disk $current $true
-		$image = Image-Path $image ($request.mode -eq 'apply')
-		$device = '\\.\PhysicalDrive' + $current.number
-		if ($request.mode -eq 'capture') {
-			Capture-Image $image $device $session
+		try {
+			Report 'FFU_STAGE:Preparing disk'
+			Prepare-Disk $current
+			$current = Get-Disks | Where-Object number -eq $request.disk.number
+			if ($request.mode -eq 'apply' -and $current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
+			Check-Disk $request.disk $current ($request.mode -eq 'apply')
+			if ($request.mode -eq 'capture' -and $current.offline) { throw 'Capture requires an online source disk.' }
+			$image = Image-Path $image ($request.mode -eq 'apply')
+			$device = '\\.\PhysicalDrive' + $current.number
+			if ($request.mode -eq 'capture') {
+				Capture-Image $image $device $session
+			}
+			else {
+				Report 'FFU_STAGE:Restoring'
+				Dism @('/English', '/Apply-FFU', "/ImageFile:$image", "/ApplyDrive:$device", "/LogPath:$session-dism.log")
+			}
 		}
-		else {
-			Report 'FFU_STAGE:Restoring'
-			Dism @('/English', '/Apply-FFU', "/ImageFile:$image", "/ApplyDrive:$device", "/LogPath:$session-dism.log")
+		catch {
+			try { Report ('Operation error: ' + $_.Exception.Message) } catch { }
+			throw
+		}
+		finally {
+			try {
+				Restore-DiskState $originalState
+				Report 'Original disk state restored.'
+			} catch { throw "Could not restore the original disk state: $($_.Exception.Message)" }
 		}
 		Report ('FFU_RESULT:' + (@{ success = $true; image = $image; logPath = $sessionLog } | ConvertTo-Json -Compress))
 	}

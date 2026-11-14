@@ -7,7 +7,16 @@
 			"command": "node",
 			"args": ["${workspaceFolder}/Scripts/PrepareDebug.cjs"],
 			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": []
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "ffu-debug",
+				"pattern": { "regexp": "^(FFU_DEBUG_ERROR): (.+)$", "file": 1, "message": 2 },
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^Preparing FFU Cloner for debugging\\.\\.\\.$",
+					"endsPattern": "^Elevated Electron started; Visual Studio Code can attach\\.$"
+				}
+			}
 		}
 	]
 }

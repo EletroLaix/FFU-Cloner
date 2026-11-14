@@ -70,6 +70,6 @@ button:disabled svg {
 .app-shell {
 	max-width: 1380px;
 	margin: auto;
-	padding: 26px 36px 20px;
+	padding: 16px 20px 12px;
 	background: radial-gradient(ellipse at 80% 0%, #f9700e09, transparent 40%);
 }

@@ -18,17 +18,6 @@
 	.speed-telemetry {
 		gap: 10px;
 	}
-	.app-shell {
-		padding: 23px 28px 18px;
-	}
-	header {
-		margin: -23px -28px 0;
-		padding: 23px 28px 23px;
-	}
-	header::after {
-		left: 28px;
-		right: 28px;
-	}
 	h1 {
 		font-size: 29px;
 	}
