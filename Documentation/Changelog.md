@@ -1,6 +1,8 @@
 # FFU Cloner Changelog
 
-## Unreleased
+## Release: 0.1.2
+
+<div class="Subtitle"><strong>Build:</strong> 0.1.2 <strong>Date:</strong> 14/11/2026</div>
 
 ### Features
 
