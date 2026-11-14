@@ -61,12 +61,16 @@ function hash(file) {
 			initial.serial === serial &&
 			initial.size === size &&
 			initial.bus === 'USB' &&
-			size > 30e9 &&
-			size < 34e9 &&
+			Number.isSafeInteger(size) &&
+			size >= 1024 ** 3 &&
 			!engine.blockReason(initial, 'apply'),
-		'Authorized 32 GB test disk must match exactly'
+		'Authorized USB test disk must match exactly'
 	);
 	log('AUTHORIZED TEST DISK: ' + JSON.stringify(initial));
+	assert.ok(
+		fs.statfsSync(output).bavail * fs.statfsSync(output).bsize >= 5 * 1024 ** 3,
+		'At least 5 GiB of test output space required'
+	);
 	const reference = storage('prepare');
 	assert.match(reference.letter, /^[A-Za-z]$/);
 	const root = reference.letter + ':\\';
@@ -114,14 +118,90 @@ function hash(file) {
 		confirmation: 'DISK ' + number,
 		logDirectory: path.join(output, 'logs'),
 		appPaths: [process.execPath, __filename],
-		version: '0.2.0'
+		version: require('../package.json').version
 	};
+	const currentDisk = async () => (await engine.listDisks()).find((d) => d.number === number);
+	// Exercise real preflight rejection before any disk preparation or DISM write.
+	await assert.rejects(
+		engine.clone(
+			{ ...request, mode: 'capture', disk: await currentDisk(), image: path.join(root, 'unsafe.ffu') },
+			progress
+		),
+		/another disk/
+	);
+	log('PASS: image on source disk rejected.');
+	const cancelledImage = path.join(output, 'cancelled.ffu');
+	const cancel = new AbortController();
+	await assert.rejects(
+		engine.clone(
+			{ ...request, image: cancelledImage, mode: 'capture', disk: await currentDisk() },
+			(update) => {
+				progress(update);
+				if (update.stage === 'Capturing') cancel.abort();
+			},
+			cancel.signal
+		),
+		(error) => error.code === 'CANCELLED'
+	);
+	assert.equal(fs.existsSync(cancelledImage), false);
+	assert.equal(
+		fs.readdirSync(output).some((name) => name.endsWith('.partial.ffu')),
+		false
+	);
+	log('PASS: capture cancellation before DISM leaves no image or partial file.');
+	async function cancelDuringOperation(mode) {
+		const controller = new AbortController();
+		let reachedProgress = false;
+		await assert.rejects(
+			engine.clone(
+				{
+					...request,
+					mode,
+					image: mode === 'capture' ? cancelledImage : image,
+					disk: await currentDisk()
+				},
+				(update) => {
+					progress(update);
+					if (update.percent >= 10) {
+						reachedProgress = true;
+						controller.abort();
+					}
+				},
+				controller.signal
+			),
+			(error) => error.code === 'CANCELLED'
+		);
+		assert.equal(reachedProgress, true, 'DISM must report progress before cancellation');
+		if (mode === 'capture') {
+			assert.equal(fs.existsSync(cancelledImage), false);
+			assert.equal(
+				fs.readdirSync(output).some((name) => name.endsWith('.partial.ffu')),
+				false
+			);
+		}
+		log('PASS: ' + mode + ' cancellation after DISM progress; operation can be retried.');
+	}
+	await cancelDuringOperation('capture');
 	await engine.clone(
 		{ ...request, mode: 'capture', disk: (await engine.listDisks()).find((d) => d.number === number) },
 		progress
 	);
 	log('Capture succeeded; removing partition table before apply.');
 	storage('clear');
+	const cancelApply = new AbortController();
+	await assert.rejects(
+		engine.clone(
+			{ ...request, mode: 'apply', disk: await currentDisk() },
+			(update) => {
+				progress(update);
+				if (update.stage === 'Restoring') cancelApply.abort();
+			},
+			cancelApply.signal
+		),
+		(error) => error.code === 'CANCELLED'
+	);
+	log('PASS: restore cancellation before DISM; retrying the same target.');
+	await cancelDuringOperation('apply');
 	await engine.clone(
 		{ ...request, mode: 'apply', disk: (await engine.listDisks()).find((d) => d.number === number) },
 		progress

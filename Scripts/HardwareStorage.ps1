@@ -4,7 +4,9 @@ $ProgressPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 try {
 	$d = Get-Disk -Number $Number
-	if ($d.UniqueId -cne $UniqueId -or ([string]$d.SerialNumber).Trim() -cne $Serial -or $d.Size -ne $Size -or $d.IsBoot -or $d.IsSystem) { throw 'Disk identity changed' }
+	if ($d.UniqueId -cne $UniqueId -or ([string]$d.SerialNumber).Trim() -cne $Serial -or $d.Size -ne $Size -or $d.BusType -ne 'USB' -or $d.IsBoot -or $d.IsSystem -or $d.IsReadOnly) { throw 'Disk identity changed or disk is protected' }
+	$paging = @(Get-CimInstance Win32_PageFileUsage | ForEach-Object { $_.Name.Substring(0, 1) })
+	if (@(Get-Partition -DiskNumber $Number | Where-Object { $_.DriveLetter -and $paging -contains [string]$_.DriveLetter }).Count) { throw 'Paging disk is protected' }
 	foreach ($protected in @($PSScriptRoot, $OutputPath, $AppPath)) {
 		if (!$protected -or $protected -notmatch '^[A-Za-z]:\\') { throw 'Protected path cannot be identified' }
 		$probe = [IO.Path]::GetFullPath($protected)
@@ -19,7 +21,8 @@ try {
 		Set-Disk -Number $Number -IsOffline $false
 		Clear-Disk -Number $Number -RemoveData -RemoveOEM -Confirm:$false
 		if ((Get-Disk -Number $Number).PartitionStyle -eq 'RAW') { Initialize-Disk -Number $Number -PartitionStyle GPT | Out-Null }
-		$p = New-Partition -DiskNumber $Number -UseMaximumSize -AssignDriveLetter
+		# Keep the fixture small even when the sacrificial disk has terabytes of capacity.
+		$p = New-Partition -DiskNumber $Number -Size 512MB -AssignDriveLetter
 		$p | Format-Volume -FileSystem NTFS -NewFileSystemLabel 'FFU_TEST' -Confirm:$false | Out-Null
 	}
 	elseif ($Action -eq 'clear') {
@@ -31,7 +34,7 @@ try {
 		Set-Disk -Number $Number -IsOffline $false
 		Update-Disk -Number $Number
 		Get-Partition -DiskNumber $Number | Where-Object { $_.Type -ne 'Reserved' } | Set-Partition -IsOffline $false
-		$p = Get-Partition -DiskNumber $Number | Where-Object Size -gt 1GB
+		$p = Get-Partition -DiskNumber $Number | Where-Object Type -eq 'Basic'
 		if (@($p).Count -ne 1) { throw 'Unexpected data partition count' }
 		if (!$p.DriveLetter) { $p | Add-PartitionAccessPath -AssignDriveLetter; $p = Get-Partition -DiskNumber $Number -PartitionNumber $p.PartitionNumber }
 	}

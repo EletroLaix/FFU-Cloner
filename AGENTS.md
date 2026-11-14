@@ -10,7 +10,7 @@
 - Use complete folder and project source file names with an initial capital letter. Preserve conventional tool-defined names such as `node_modules`, `package.json`, `index.html`, locale codes and test suffixes.
 - Store generated builds, caches and test output in `Output`, excluded from Git.
 - Maintain one changelog in `Documentation/Changelog.md`, newest releases first, with Features, BugFix, Resources and Known issues sections.
-- No physical test disk is currently available: use simulated engines, data and processes until the user reports that one is available again.
+- A sacrificial USB test disk is available. Verify its exact identity and exclude system, boot, paging and project disks before destructive tests.
 - Do not commit validation reports, checksums or test results. Keep generated output in `Output` and change history in the changelog.
 - Place source code in `Source/Application` and `Source/Interface`, and translations, images and fonts under `Source/Resources`.
 - Keep the project license in the repository root. Generate dependency notices during the build without dedicated source copies.
