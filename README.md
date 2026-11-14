@@ -1,5 +1,9 @@
 # FFU Cloner
 
+[![Release v0.1.1](https://img.shields.io/badge/release-v0.1.1-4c9aff?style=flat-square)](https://github.com/EletroLaix/FFU-Cloner/releases/latest)
+![Windows x64](https://img.shields.io/badge/platform-Windows%20x64-0078d4?style=flat-square)
+![Installer MSI](https://img.shields.io/badge/installer-MSI-805ad5?style=flat-square)
+
 **A complete disk image, in one screen.** FFU Cloner captures and restores Full Flash Update images with DISM through a focused desktop interface.
 
 FFU Cloner is a private project developed by Marino Adriani. Artificial intelligence was used as an assistance tool during development.
@@ -51,7 +55,7 @@ The MSI is created in `Output/Installer`. Builds are unsigned unless signing is 
 
 `Master` holds the release baseline; ongoing development takes place on `Develop`. Both branches start from version 0.1.0.
 
-To prepare a release, run the tests locally, update the version in both package files and add the matching section to `Documentation/Changelog.md`. Once the release commit is on `Master`, push a matching tag such as `v0.1.0`. The release workflow validates the tag and branch, then shows separate steps for tests, compilation, packaging and deployment. The test step is informational: the workflow does not run or verify local tests. It builds the MSI and publishes a GitHub Release containing the installer and release notes. The repository's visibility determines who can access the release. The workflow does not create tags.
+To prepare a release, run the tests locally, update the version in both package files and the release badge above, and add the matching section to `Documentation/Changelog.md`. The badge uses a fixed version so it works with the private repository. Once the release commit is on `Master`, push a matching tag such as `v0.1.0`. The release workflow validates the tag and branch, then shows separate steps for tests, compilation, packaging and deployment. The test step is informational: the workflow does not run or verify local tests. It builds the MSI and publishes a GitHub Release containing the installer and release notes. The repository's visibility determines who can access the release. The workflow does not create tags.
 
 Use `npm run start:build` to build and launch for development, then `npm start` to reopen the existing build without compiling it again. Use `npm run dev` for a browser preview with simulated data. Automated checks are available through `npm test`, `npm run test:ui`, and `npm run test:electron`. Run `npm run test:startup` to measure three interface launches with simulated, pending environment and disk queries. Set `FFU_APP_PATH` to an extracted `resources/app.asar` to check the packaged application code. These timings exclude ZIP extraction, UAC and physical disk discovery.
 

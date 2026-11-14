@@ -1,5 +1,27 @@
 # FFU Cloner Changelog
 
+## Release: 0.1.1
+
+<div class="Subtitle"><strong>Build:</strong> 0.1.1 <strong>Date:</strong> 14/11/2026</div>
+
+### Features
+
+- First official release of FFU Cloner for Windows.
+
+### BugFix
+
+- None in this release.
+
+### Resources
+
+- Publish the Windows MSI and release notes through the tag-triggered GitHub Actions workflow.
+
+### Known issues
+
+- No physical test disk is currently available; the application has been checked with simulated engines, data and processes.
+- The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
+- FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
+
 ## Release: 0.1.0
 
 <div class="Subtitle"><strong>Build:</strong> 0.1.0 <strong>Date:</strong> 13/11/2026</div>
