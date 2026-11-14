@@ -13,4 +13,4 @@
 - No physical test disk is currently available: use simulated engines, data and processes until the user reports that one is available again.
 - Do not commit validation reports, checksums or test results. Keep generated output in `Output` and change history in the changelog.
 - Place source code in `Source/Application` and `Source/Interface`, and translations, images and fonts under `Source/Resources`.
-- Do not add a project license file. Generate dependency notices during the build without dedicated source copies.
+- Keep the project license in the repository root. Generate dependency notices during the build without dedicated source copies.

@@ -16,6 +16,7 @@
 - Name the Windows installer `FFU Cloner [version].msi`.
 - Refresh the README with a direct release link and document the Develop-to-Master release process.
 - Adopt GPL-3.0-only for the project source code.
+- Include the complete GPLv3 license in the repository and installed application.
 - Remove the obsolete portable launcher diagnostic and its retired runtime references.
 - Simplify the README build instructions.
 

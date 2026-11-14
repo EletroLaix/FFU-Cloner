@@ -32,6 +32,7 @@
 			"Source/Resources/Images/Icon.png",
 			"package.json"
 		],
+		"extraFiles": ["LICENSE.md"],
 		"asar": true,
 		"asarUnpack": [
 			"Source/Application/Windows/*.ps1"

@@ -76,4 +76,4 @@ Generated files stay in `Output`, which is excluded from Git. Automated checks u
 
 ## License
 
-Copyright © 2026 Marino Adriani. FFU Cloner is licensed under the [GNU General Public License, version 3 only](https://www.gnu.org/licenses/gpl-3.0.html) (`GPL-3.0-only`). The license permits commercial use and requires distribution of covered derivative works under the same license, including access to their corresponding source code. Private modifications do not have to be published. Third-party components remain subject to their own licenses; their notices are generated during the build.
+Copyright © 2026 Marino Adriani. FFU Cloner is licensed under the [GNU General Public License, version 3 only](LICENSE.md) (`GPL-3.0-only`). The license permits commercial use and requires distribution of covered derivative works under the same license, including access to their corresponding source code. Private modifications do not have to be published. Third-party components remain subject to their own licenses; their notices are generated during the build.
