@@ -47,6 +47,15 @@ const fs = require('node:fs');
 						uniqueId: 'TEST'
 					},
 					{
+						token: 'mbr',
+						number: 2,
+						name: 'MBR USB',
+						size: 2000398934016,
+						bus: 'USB',
+						style: 'MBR',
+						uniqueId: 'MBR-TEST'
+					},
+					{
 						token: 'protected',
 						number: 0,
 						name: 'SAMSUNG NVMe',
@@ -91,7 +100,8 @@ const fs = require('node:fs');
 		await page.getByRole('radio').first().waitFor();
 		await page.waitForFunction(() => window.__sizes.length > 0);
 		const fullHeight = await page.evaluate(() => window.__sizes.at(-1));
-		assert.equal(await page.getByRole('radio').nth(1).isDisabled(), true);
+		assert.equal(await page.getByRole('radio', { name: /SAMSUNG NVMe/ }).isDisabled(), true);
+		assert.equal(await page.getByRole('radio', { name: /MBR USB/ }).isEnabled(), true);
 		await page.getByRole('button', { name: 'Seleziona immagine FFU' }).click();
 		const imageBox = await page.locator('.image-card').boundingBox();
 		const diskBox = await page.locator('.disk-card').boundingBox();
@@ -169,6 +179,9 @@ const fs = require('node:fs');
 		await page.getByText('Operazione interrotta', { exact: true }).waitFor();
 		await page.getByText('Il disco è incompleto.', { exact: false }).waitFor();
 		await page.getByRole('button', { name: 'Acquisisci', exact: true }).click();
+		const mbr = page.getByRole('radio', { name: /MBR USB/ });
+		assert.equal(await mbr.isDisabled(), true);
+		assert.match(await mbr.textContent(), /GPT.*MBR/);
 		assert.equal(await page.locator('.workflow .card h2').first().textContent(), 'Disco sorgente');
 		await page.screenshot({ path: 'Output/Validation/Interface/capture.png' });
 		await page.getByRole('radio').first().click();

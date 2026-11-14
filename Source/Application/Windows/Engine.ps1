@@ -166,6 +166,18 @@ function Capture-Image([string]$image, [string]$device, [string]$session) {
 
 function Prepare-Disk($disk) {
 	Check-Cancel
+	if ($request.mode -eq 'capture') {
+		# DISM must open volumes to read filesystem metadata before it locks them for capture.
+		# Offlining the source prevents that discovery and produces ERROR_NOT_READY (21).
+		if ($disk.offline) { Set-Disk -Number $disk.number -IsOffline $false }
+		. (Join-Path $PSScriptRoot 'VolumeAccess.ps1')
+		Get-Partition -DiskNumber $disk.number | Where-Object Type -ne 'Reserved' | ForEach-Object {
+			Check-Cancel
+			if ($_.IsOffline) { $_ | Set-Partition -IsOffline $false }
+			foreach ($volume in @($_.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })) { [FfuVolume]::Online($volume) }
+		}
+		return
+	}
 	if ($disk.offline -or $disk.volumesOffline) { return }
 	if (!$disk.removable) { Set-Disk -Number $disk.number -IsOffline $true; return }
 	# Windows cannot offline an entire removable disk. Offline every volume, including EFI.
@@ -231,8 +243,9 @@ try {
 		Report 'FFU_STAGE:Preparing disk'
 		Prepare-Disk $current
 		$current = Get-Disks | Where-Object number -eq $request.disk.number
-		if ($current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
-		Check-Disk $request.disk $current $true
+		if ($request.mode -eq 'apply' -and $current -and !$current.offline) { $current.volumesOffline = Test-VolumesOffline $current.number }
+		Check-Disk $request.disk $current ($request.mode -eq 'apply')
+		if ($request.mode -eq 'capture' -and $current.offline) { throw 'Capture requires an online source disk.' }
 		$image = Image-Path $image ($request.mode -eq 'apply')
 		$device = '\\.\PhysicalDrive' + $current.number
 		if ($request.mode -eq 'capture') {
