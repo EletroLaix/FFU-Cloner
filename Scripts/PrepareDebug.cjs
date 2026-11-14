@@ -3,6 +3,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 process.chdir(path.join(__dirname, '..'));
+console.log('FFU_DEBUG_START');
 function run(args) {
 	const windows = process.platform === 'win32';
 	const command = windows ? process.env.ComSpec || 'cmd.exe' : 'npm';
@@ -47,6 +48,7 @@ if (process.platform === 'win32') {
 		process.exit(result.status ?? 1);
 	}
 	console.log('Elevated Electron started; Visual Studio Code can attach.');
+	console.log('FFU_DEBUG_READY');
 } else {
 	console.error('Elevated debugging requires Windows.');
 	process.exit(1);

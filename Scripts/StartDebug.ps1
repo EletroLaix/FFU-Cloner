@@ -16,5 +16,5 @@ try {
 }
 $env:ELECTRON_RUN_AS_NODE = $null
 $arguments = @('--inspect-brk=127.0.0.1:9229', ('"' + $root + '"'), '--remote-debugging-port=9223', '--remote-debugging-address=127.0.0.1')
-Start-Process -FilePath $electron -ArgumentList $arguments -WorkingDirectory $root -Verb RunAs -WindowStyle Hidden | Out-Null
+Start-Process -FilePath $electron -ArgumentList $arguments -WorkingDirectory $root -Verb RunAs -WindowStyle Normal | Out-Null
 Write-Output 'Waiting for Visual Studio Code to attach to elevated Electron.'
