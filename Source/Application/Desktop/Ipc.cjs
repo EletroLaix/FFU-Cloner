@@ -80,9 +80,13 @@ module.exports = function registerIpc(window, indexFile) {
 					});
 		if (result.canceled) return null;
 		const image = result.filePath || result.filePaths[0];
-		if (mode === 'capture' && fs.existsSync(image))
-			throw new Error('The file already exists. Choose a new name.');
-		chosenImage = { mode, path: image };
+		let overwrite = null;
+		if (mode === 'capture' && fs.existsSync(image)) {
+			const stat = fs.lstatSync(image);
+			if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Invalid image file.');
+			overwrite = { size: stat.size, modified: Math.floor(stat.mtimeMs) };
+		}
+		chosenImage = { mode, path: image, overwrite };
 		return { path: image, name: path.basename(image) };
 	});
 	handle('start-clone', async (request) => {
@@ -103,6 +107,7 @@ module.exports = function registerIpc(window, indexFile) {
 					mode: request.mode,
 					disk,
 					image: chosenImage.path,
+					overwrite: chosenImage.overwrite,
 					confirmed: request.confirmed === true,
 					logDirectory,
 					version: app.getVersion(),

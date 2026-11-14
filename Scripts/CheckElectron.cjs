@@ -166,7 +166,9 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 				dialog.showOpenDialog = saved.open;
 				dialog.showSaveDialog = saved.save;
 			};
-			const image = require('node:path').join(app.getPath('temp'), 'FFU-Test-' + Date.now() + '.ffu');
+			const image = require('node:path').join(process.env.LOCALAPPDATA, 'FFU-Test-' + Date.now() + '.ffu');
+			require('node:fs').writeFileSync(image, 'EXISTING IMAGE');
+			globalThis.testImage = image;
 			engine.listDisks = async () => [
 				{ number: 1, name: 'Simulated drive', size: 32017047552, uniqueId: 'TEST', style: 'GPT' }
 			];
@@ -176,6 +178,7 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 			engine.clone = async (_request, _progress, signal) =>
 				new Promise((_resolve, reject) => {
 					globalThis.cloneStarted = true;
+					globalThis.cloneRequest = _request;
 					globalThis.cloneProgress = _progress;
 					signal.addEventListener(
 						'abort',
@@ -263,11 +266,17 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 					await new Promise((resolve) => setTimeout(resolve, 25));
 				if (!globalThis.cloneStarted) throw new Error('Simulated engine did not start');
 			});
+			if (mode === 'capture') {
+				const overwrite = await app.evaluate(() => globalThis.cloneRequest.overwrite);
+				assert.equal(overwrite.size, Buffer.byteLength('EXISTING IMAGE'));
+				assert.equal(typeof overwrite.modified, 'number');
+			}
 			assert.equal(await page.evaluate(() => window.ffu.cancelClone()), true);
 			assert.equal(await page.evaluate(() => window.pendingClone), 'CANCELLED');
 			assert.equal(await page.evaluate(() => window.ffu.cancelClone()), false);
 		}
 		await app.evaluate(() => globalThis.restoreEngine());
+		await app.evaluate(() => process.getBuiltinModule('fs').unlinkSync(globalThis.testImage));
 		await page.getByTestId('minimize-window').click();
 		await app.evaluate(async ({ BrowserWindow }) => {
 			const window = BrowserWindow.getAllWindows()[0];

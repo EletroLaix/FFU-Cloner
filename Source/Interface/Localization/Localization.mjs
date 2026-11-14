@@ -40,6 +40,7 @@ const errorKeys = {
 	'Select the image and disk again.': 'reselect',
 	'Invalid disk confirmation.': 'invalidConfirmation',
 	'The file already exists. Choose a new name.': 'imageExists',
+	'The selected image has changed. Select it again.': 'imageChanged',
 	'FFU operations require Windows.': 'windowsRequired',
 	'Run FFU Cloner as administrator.': 'adminRequired',
 	'Disk is read-only.': 'readOnly',

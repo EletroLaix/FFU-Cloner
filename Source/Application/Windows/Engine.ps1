@@ -42,7 +42,7 @@ function Image-Path([string]$value, [bool]$mustExist) {
 	$full = [IO.Path]::GetFullPath($value)
 	if ([IO.Path]::GetExtension($full) -ine '.ffu') { throw 'The file must have the .ffu extension.' }
 	if ($mustExist -and ![IO.File]::Exists($full)) { throw 'Image not found.' }
-	if (!$mustExist -and (Test-Path -LiteralPath $full)) { throw 'The file already exists. Choose a new name.' }
+	if (!$mustExist) { Check-Output $full }
 	$directory = [IO.Path]::GetDirectoryName($full)
 	if (![IO.Directory]::Exists($directory)) { throw 'The destination directory does not exist.' }
 	$item = if ($mustExist) { $full } else { $directory }
@@ -51,6 +51,21 @@ function Image-Path([string]$value, [bool]$mustExist) {
 		$item = [IO.Path]::GetDirectoryName($item)
 	}
 	return $full
+}
+
+function Check-Output([string]$image) {
+	$exists = [IO.File]::Exists($image)
+	if (!$request.overwrite) {
+		if (Test-Path -LiteralPath $image) { throw 'The file already exists. Choose a new name.' }
+		return
+	}
+	if (!$exists) { throw 'The selected image has changed. Select it again.' }
+	$file = Get-Item -LiteralPath $image -Force
+	if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+		$file.Length -ne $request.overwrite.size -or
+		([DateTimeOffset]$file.LastWriteTimeUtc).ToUnixTimeMilliseconds() -ne $request.overwrite.modified) {
+		throw 'The selected image has changed. Select it again.'
+	}
 }
 
 function Path-Disk([string]$value) {
@@ -154,7 +169,15 @@ function Capture-Image([string]$image, [string]$device, [string]$session) {
 		Report 'FFU_STAGE:Capturing'
 		Dism @('/English', '/Capture-FFU', "/ImageFile:$working", "/CaptureDrive:$device", "/Name:$name", '/Compress:default', "/LogPath:$session-dism.log")
 		if (![IO.File]::Exists($working) -or (Get-Item -LiteralPath $working).Length -le 0) { throw 'DISM did not produce a valid FFU.' }
-		[IO.File]::Move($working, $image)
+		Check-Output $image
+		if ($request.overwrite) {
+			# Windows PowerShell 5.1 converts a null string argument to an empty path.
+			if (-not ('FfuFileReplace' -as [type])) {
+				Add-Type 'public static class FfuFileReplace { public static void Replace(string source, string destination) { System.IO.File.Replace(source, destination, null); } }'
+			}
+			[FfuFileReplace]::Replace($working, $image)
+		}
+		else { [IO.File]::Move($working, $image) }
 	}
 	finally {
 		# Dism waits for the process tree to exit before control reaches this block.

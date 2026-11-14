@@ -24,7 +24,7 @@ test(
 				{ encoding: 'utf8', windowsHide: true }
 			);
 			assert.equal(result.status, 0, result.stderr || result.stdout);
-			assert.match(result.stdout, /5 capture cleanup checks passed/);
+			assert.match(result.stdout, /9 capture cleanup checks passed/);
 		} finally {
 			for (const file of fs.readdirSync(directory)) fs.unlinkSync(path.join(directory, file));
 			fs.rmdirSync(directory);

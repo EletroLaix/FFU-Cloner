@@ -3,8 +3,9 @@ $ErrorActionPreference='Stop'
 $tokens=$null; $errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../Source/Application/Windows/Engine.ps1'),[ref]$tokens,[ref]$errors)
 if ($errors.Count) { throw ($errors | Out-String) }
-$capture=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Capture-Image'},$true)
-. ([ScriptBlock]::Create($capture.Extent.Text))
+$functions=$ast.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Capture-Image','Check-Output')},$true)
+foreach ($function in $functions) { . ([ScriptBlock]::Create($function.Extent.Text)) }
+$request=[pscustomobject]@{ overwrite=$null }
 function Report([string]$text) { }
 function Dism([string[]]$arguments) {
 	$script:partial = ($arguments | Where-Object { $_.StartsWith('/ImageFile:') }).Substring(11)
@@ -49,4 +50,19 @@ foreach ($script:scenario in @('success','cancel','error','locked','missing')) {
 		if ($script:lock) { $script:lock.Dispose(); $script:lock=$null }
 	}
 }
-Write-Output '5 capture cleanup checks passed. No physical disk accessed.'
+$overwrite=Join-Path $Directory 'Replace.ffu'
+foreach ($script:scenario in @('cancel','error','success')) {
+	[IO.File]::WriteAllText($overwrite,'ORIGINAL')
+	$file=Get-Item -LiteralPath $overwrite
+	$request.overwrite=[pscustomobject]@{ size=$file.Length; modified=([DateTimeOffset]$file.LastWriteTimeUtc).ToUnixTimeMilliseconds() }
+	$message=$null
+	try { Capture-Image $overwrite '\\.\PhysicalDrive1' (Join-Path $Directory 'Session') } catch { $message=$_.Exception.Message }
+	$expected=if ($script:scenario -eq 'success') { 'TEST IMAGE' } else { 'ORIGINAL' }
+	if ([IO.File]::ReadAllText($overwrite) -ne $expected) { throw "Replacement $script:scenario damaged the original or lost the new image: $message" }
+	if ($script:scenario -eq 'success' -and $message) { throw $message }
+	if ($script:scenario -ne 'success' -and !$message) { throw 'Expected capture failure' }
+}
+$file=Get-Item -LiteralPath $overwrite
+$request.overwrite=[pscustomobject]@{ size=$file.Length+1; modified=([DateTimeOffset]$file.LastWriteTimeUtc).ToUnixTimeMilliseconds() }
+try { Check-Output $overwrite; throw 'Changed image accepted' } catch { if ($_.Exception.Message -eq 'Changed image accepted') { throw } }
+Write-Output '9 capture cleanup checks passed. No physical disk accessed.'
