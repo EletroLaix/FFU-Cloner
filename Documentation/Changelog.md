@@ -8,6 +8,9 @@
 
 ### BugFix
 
+- Restore the selected disk's original online or offline state after operations, including cancellation and errors.
+- Honor a confirmed existing FFU destination and replace it only after capture succeeds.
+- Center the restore confirmation button.
 - Install and verify the Electron runtime before starting a Visual Studio Code debug session.
 - Explain that FFU capture requires GPT and does not support MBR, instead of leaving the disk lock open to interpretation.
 - Bring source volumes online for capture so DISM can read filesystem metadata; keep offline preparation and verification for restore targets. This fixes DISM error 21 on an offline USB source.

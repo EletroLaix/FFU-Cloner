@@ -12,4 +12,6 @@ The Windows adapter translates the shared confirmation into the existing DISM pr
 
 Capture brings the source disk and its data volumes online: DISM needs filesystem metadata access before managing capture access, and an offline source produces error 21 (`ERROR_NOT_READY`). Restore takes the target disk or all its non-reserved volumes offline and verifies that state before DISM starts. Both modes recheck disk identity and protection after preparation.
 
+After success, cancellation or failure, the engine rechecks disk identity and restores its initial online/offline state and the recorded partition states where those partition numbers still exist. Failures to restore state are reported. When capture replaces a confirmed existing image, the old file is retained until DISM has produced a complete new image; the selected file is checked again before atomic replacement.
+
 To add a platform, implement the contract and select the adapter in `Engine.cjs`. Define its image formats and capabilities explicitly before enabling them in the interface; the current UI, disk records, FFU selection, Windows privilege checks and error messages are still Windows-specific. Keep platform operations separate, test destructive paths using simulated processes and devices first, and validate on appropriate hardware before deployment.

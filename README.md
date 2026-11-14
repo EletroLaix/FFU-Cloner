@@ -20,7 +20,7 @@
 
 **Restore overwrites the entire target disk.** The app protects system, boot and paging disks. Keep the app, image and logs on another disk, and close files on the selected disk. An interrupted restore must be repeated.
 
-Requires Windows x64, DISM and Windows PowerShell 5.1 with the Storage module. Capture requires a **GPT** source and a new file on **NTFS or ReFS**, with at least 2 GiB free. Restore leaves the target offline; use Disk Management to bring it online if needed.
+Requires Windows x64, DISM and Windows PowerShell 5.1 with the Storage module. Capture requires a **GPT** source and a file on **NTFS or ReFS**, with at least 2 GiB free. The app restores the disk's initial online or offline state after the operation.
 
 The installer is unsigned. Verify restored contents and bootability on the intended machine before production use.
 
