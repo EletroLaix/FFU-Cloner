@@ -35,10 +35,18 @@ if (process.platform === 'win32') {
 	const result = spawnSync(
 		path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
 		['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'StartDebug.ps1')],
-		{ stdio: 'inherit' }
+		// Electron can inherit the launcher's terminal handles through UAC. Keeping
+		// those handles open makes VS Code wait for the task before attaching.
+		{ stdio: 'ignore' }
 	);
 	if (result.error) throw result.error;
-	if (result.status !== 0) process.exit(result.status ?? 1);
+	if (result.status !== 0) {
+		console.error(
+			'Could not start elevated Electron. Accept the administrator prompt and ensure debug ports 9229 and 9223 are free.'
+		);
+		process.exit(result.status ?? 1);
+	}
+	console.log('Elevated Electron started; Visual Studio Code can attach.');
 } else {
 	console.error('Elevated debugging requires Windows.');
 	process.exit(1);

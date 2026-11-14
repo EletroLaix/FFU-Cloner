@@ -12,6 +12,7 @@
 - Explain that FFU capture requires GPT and does not support MBR, instead of leaving the disk lock open to interpretation.
 - Bring source volumes online for capture so DISM can read filesystem metadata; keep offline preparation and verification for restore targets. This fixes DISM error 21 on an offline USB source.
 - Request administrator elevation when starting an Electron debug session from Visual Studio Code.
+- Let the Visual Studio Code preparation task finish after starting elevated Electron, so the debugger can attach and open the app.
 - Allow the installed app to open without administrator privileges; disk operations still require elevation.
 
 ### Resources
