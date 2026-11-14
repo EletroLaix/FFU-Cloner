@@ -19,7 +19,7 @@
 	},
 	"build": {
 		"appId": "io.marinoandriani.ffucloner",
-		"artifactName": "FFU-Cloner-${version}-${arch}-Setup.${ext}",
+		"artifactName": "FFU Cloner [${version}].${ext}",
 		"productName": "FFU Cloner",
 		"directories": {
 			"output": "Output/Installer"

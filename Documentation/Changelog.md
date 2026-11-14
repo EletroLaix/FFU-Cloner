@@ -1,5 +1,26 @@
 # FFU Cloner Changelog
 
+## Unreleased
+
+### Features
+
+- None.
+
+### BugFix
+
+- None.
+
+### Resources
+
+- Display test, compilation, packaging and deployment as separate release workflow jobs.
+- Name the Windows installer `FFU Cloner [version].msi`.
+
+### Known issues
+
+- No physical test disk is currently available; checks use simulated engines, data and processes.
+- The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
+- FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
+
 ## Release: 0.1.1
 
 <div class="Subtitle"><strong>Build:</strong> 0.1.1 <strong>Date:</strong> 14/11/2026</div>
