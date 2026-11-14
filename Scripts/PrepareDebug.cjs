@@ -31,3 +31,15 @@ if (process.platform === 'win32' && !fs.existsSync(electronBinary)) {
 	}
 }
 run(['run', 'build', '--', '--sourcemap']);
+if (process.platform === 'win32') {
+	const result = spawnSync(
+		path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+		['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'StartDebug.ps1')],
+		{ stdio: 'inherit' }
+	);
+	if (result.error) throw result.error;
+	if (result.status !== 0) process.exit(result.status ?? 1);
+} else {
+	console.error('Elevated debugging requires Windows.');
+	process.exit(1);
+}
