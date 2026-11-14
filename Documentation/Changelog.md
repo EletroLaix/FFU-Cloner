@@ -14,6 +14,7 @@
 
 - Display test, compilation, packaging and deployment as separate release workflow jobs.
 - Name the Windows installer `FFU Cloner [version].msi`.
+- Refresh the README with a direct release link and document the Develop-to-Master release process.
 
 ### Known issues
 

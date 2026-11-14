@@ -4,13 +4,23 @@
 ![Windows x64](https://img.shields.io/badge/platform-Windows%20x64-0078d4?style=flat-square)
 ![Installer MSI](https://img.shields.io/badge/installer-MSI-805ad5?style=flat-square)
 
-**A complete disk image, in one screen.** FFU Cloner captures and restores Full Flash Update images with DISM through a focused desktop interface.
+**A complete disk image, in one screen.** Capture and restore Windows Full Flash Update (FFU) images through a focused desktop interface, with clear progress and safety checks along the way.
 
-FFU Cloner is a private project developed by Marino Adriani. Artificial intelligence was used as an assistance tool during development.
+[**Download the latest Windows installer**](https://github.com/EletroLaix/FFU-Cloner/releases/latest) · [View the changelog](Documentation/Changelog.md) · [Build from source](#build)
+
+FFU Cloner is developed by Marino Adriani for the community. Artificial intelligence was used as an assistance tool during development.
 
 ![FFU Cloner overview](Documentation/Images/Overview.png)
 
 _Image and disk selection with demonstration data._
+
+## Get started
+
+1. Open the [latest release](https://github.com/EletroLaix/FFU-Cloner/releases/latest) and download the `.msi` installer under **Assets**.
+2. Install FFU Cloner and launch it on a Windows x64 computer with administrator privileges.
+3. Choose **Capture** or **Restore**, then select the image and disk before starting the operation.
+
+The installer is currently unsigned. Physical-disk capture, restore and boot validation have not yet been completed; automated checks use simulated engines, data and processes. Review the [requirements](#requirements) and [safety notes](#how-it-works) before use.
 
 ## What it does
 
@@ -53,7 +63,7 @@ npm run package
 
 The MSI is created in `Output/Installer`. Builds are unsigned unless signing is configured separately. Run the tests locally before preparing a release.
 
-`Master` holds the release baseline; ongoing development takes place on `Develop`. Both branches start from version 0.1.0.
+`Develop` contains ongoing work and topic commits. `Master` contains release commits: when a release is explicitly requested, squash-merge `Develop` into `Master` as one release commit and tag that commit. Do not push development commits directly to `Master`.
 
 To prepare a release, run the tests locally, update the version in both package files and the release badge above, and add the matching section to `Documentation/Changelog.md`. The badge uses a fixed version so it works with the private repository. Once the release commit is on `Master`, push a matching tag such as `v0.1.1`. The release workflow shows separate jobs for tests, compilation, packaging and deployment. The test job validates the tag, branch and release notes; it does not run or verify the local tests. The workflow builds the MSI and publishes a GitHub Release containing the installer and release notes. The repository's visibility determines who can access the release. The workflow does not create tags.
 
