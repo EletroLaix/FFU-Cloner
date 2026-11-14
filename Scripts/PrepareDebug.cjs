@@ -47,7 +47,6 @@ if (process.platform === 'win32') {
 		);
 		process.exit(result.status ?? 1);
 	}
-	console.log('Elevated Electron started; Visual Studio Code can attach.');
 	console.log('FFU_DEBUG_READY');
 } else {
 	console.error('Elevated debugging requires Windows.');
