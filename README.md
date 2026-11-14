@@ -14,7 +14,7 @@
 
 ## Use
 
-1. Install the MSI and launch FFU Cloner as administrator.
+1. Install the MSI and launch FFU Cloner. Run it as administrator to perform disk operations.
 2. Choose **Capture** or **Restore**, then select the disk and FFU file.
 3. Start the operation; confirm disk erasure when restoring.
 
@@ -34,6 +34,6 @@ npm test
 npm run package
 ```
 
-The MSI is created in `Output/Installer`. Use `npm run start:build` to launch from source, or **F5** in Visual Studio Code. Run as administrator for physical-disk operations. See the [engine documentation](Documentation/Engine.md) for implementation details.
+The MSI is created in `Output/Installer`. Use `npm run start:build` to launch from source, or **F5** in Visual Studio Code and accept the Windows administrator prompt. Close the app window when finished debugging. See the [engine documentation](Documentation/Engine.md) for implementation details.
 
 Developed by Marino Adriani, with artificial intelligence used as a development aid.

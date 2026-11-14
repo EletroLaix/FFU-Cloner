@@ -41,7 +41,7 @@
 			"target": [
 				"msi"
 			],
-			"requestedExecutionLevel": "requireAdministrator",
+			"requestedExecutionLevel": "asInvoker",
 			"icon": "Source/Resources/Images/Icon.ico"
 		},
 		"msi": {
