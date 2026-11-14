@@ -42,8 +42,7 @@ module.exports = function registerIpc(window, indexFile) {
 	handle('minimize-window', () => window.minimize());
 	handle('close-window', () => window.close());
 	handle('fit-window', (height) => {
-		if (!Number.isSafeInteger(height) || height < 1 || height > 10000)
-			throw new Error('Invalid window height.');
+		if (![620, 820].includes(height)) throw new Error('Invalid window height.');
 		const bounds = window.getBounds();
 		const area = screen.getDisplayMatching(bounds).workArea;
 		height = Math.min(Math.max(320, height), area.height);

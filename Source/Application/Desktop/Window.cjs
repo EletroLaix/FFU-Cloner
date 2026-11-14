@@ -1,7 +1,7 @@
 const { BrowserWindow, screen } = require('electron');
 const path = require('node:path');
 
-// Keep the window fixed for the user while allowing content-driven height changes.
+// Keep the window width fixed while switching between full and compact heights.
 module.exports = function createWindow() {
 	const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
 	const width = Math.min(1120, area.width);

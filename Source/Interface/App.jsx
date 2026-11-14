@@ -34,7 +34,6 @@ export default function App() {
 	const [speedSamples, setSpeedSamples] = useState([]);
 	const [confirm, setConfirm] = useState(false);
 	const [showLogs, setShowLogs] = useState(false);
-	const appElement = useRef(null);
 	const generation = useRef(0);
 	const capture = mode === 'capture';
 	const ready =
@@ -47,7 +46,7 @@ export default function App() {
 		!busy &&
 		!loading;
 
-	useWindowHeight(appElement, api, confirm);
+	useWindowHeight(api, busy || (!!image && !!disk && !choosingDisk));
 	async function refresh() {
 		const ticket = ++generation.current;
 		setLoading(true);
@@ -128,20 +127,18 @@ export default function App() {
 				setStatus({ cancelled: true, key: 'cancelled' });
 				setPercent(null);
 				if (capture) setImage(null);
-				await refresh();
 				return;
 			}
 			setPercent(100);
 			setStatus({ success: true, key: capture ? 'imageSaved' : 'diskRestored' });
 			if (capture) setImage(null);
-			await refresh();
 		} catch (error) {
 			setStatus({ error: true, title: error.message });
 			if (capture) setImage(null);
-			await refresh();
 		} finally {
 			setBusy(false);
 			setStopping(false);
+			await refresh();
 		}
 	}
 	async function cancelOperation() {
@@ -195,7 +192,7 @@ export default function App() {
 		/>
 	);
 	return (
-		<main ref={appElement} className={`app-shell ${busy ? 'running' : ''}`}>
+		<main className={`app-shell ${busy ? 'running' : ''}`}>
 			<Header
 				t={t}
 				language={language}

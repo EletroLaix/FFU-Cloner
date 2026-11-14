@@ -105,6 +105,10 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		);
 		await page.mouse.move(closeIcon.x + closeIcon.width / 2, closeIcon.y + closeIcon.height / 2);
 		assert.equal(await closeLogs.evaluate((element) => element.matches(':hover')), true);
+		await page.waitForFunction(() => {
+			const button = document.querySelector('.logs-heading .icon-button');
+			return button && getComputedStyle(button).backgroundColor !== 'rgba(0, 0, 0, 0)';
+		});
 		assert.notEqual(
 			await closeLogs.evaluate((element) => getComputedStyle(element).backgroundColor),
 			'rgba(0, 0, 0, 0)'
@@ -166,7 +170,10 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 				dialog.showOpenDialog = saved.open;
 				dialog.showSaveDialog = saved.save;
 			};
-			const image = require('node:path').join(process.env.LOCALAPPDATA, 'FFU-Test-' + Date.now() + '.ffu');
+			const image = require('node:path').join(
+				process.env.LOCALAPPDATA,
+				'FFU-Test-' + Date.now() + '.ffu'
+			);
 			require('node:fs').writeFileSync(image, 'EXISTING IMAGE');
 			globalThis.testImage = image;
 			engine.listDisks = async () => [
@@ -180,6 +187,8 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 					globalThis.cloneStarted = true;
 					globalThis.cloneRequest = _request;
 					globalThis.cloneProgress = _progress;
+					globalThis.finishClone = _resolve;
+					globalThis.failClone = reject;
 					signal.addEventListener(
 						'abort',
 						() => reject(Object.assign(new Error('Operation cancelled.'), { code: 'CANCELLED' })),
@@ -190,16 +199,42 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 		await page.reload();
 		await page.getByRole('radio').first().waitFor();
 		await page.waitForTimeout(200);
+		await app.evaluate(({ BrowserWindow }) => {
+			const window = BrowserWindow.getAllWindows()[0];
+			globalThis.resizeHistory = [];
+			window.on('resize', () => globalThis.resizeHistory.push(window.getBounds()));
+		});
 		const fullHeight = await app.evaluate(
 			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
 		);
+		const fixedWidth = await app.evaluate(
+			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().width
+		);
+		const contentWidth = await page.evaluate(() => document.documentElement.clientWidth);
 		await page.getByRole('radio').first().click();
+		assert.equal(
+			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height),
+			fullHeight
+		);
 		await page.getByTestId('pick-image').click();
 		await page.waitForTimeout(200);
 		const compactHeight = await app.evaluate(
 			({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
 		);
 		assert.ok(compactHeight < fullHeight - 100, `Dynamic height: ${fullHeight} -> ${compactHeight}`);
+		assert.equal(await page.evaluate(() => document.documentElement.clientWidth), contentWidth);
+		assert.ok(
+			await page
+				.locator('footer')
+				.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+		);
+		await page.locator('.operation .primary').click();
+		await page.getByRole('dialog').waitFor();
+		assert.equal(
+			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height),
+			compactHeight
+		);
+		await page.keyboard.press('Escape');
 		assert.equal(
 			await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isResizable()),
 			false
@@ -225,6 +260,18 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 			await page.locator('.operation .primary').click();
 			await page.getByTestId('cancel-operation').waitFor();
 			await app.evaluate(() => globalThis.cloneProgress({ percent: 15, bytesPerSecond: 1000000 }));
+			await page.waitForTimeout(200);
+			const runningBounds = await app.evaluate(({ BrowserWindow }) =>
+				BrowserWindow.getAllWindows()[0].getBounds()
+			);
+			assert.equal(runningBounds.height, compactHeight, 'Graph must not change compact height');
+			assert.equal(runningBounds.width, fixedWidth, 'Graph must not change width');
+			assert.equal(await page.evaluate(() => document.documentElement.clientWidth), contentWidth);
+			assert.ok(
+				await page
+					.locator('footer')
+					.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+			);
 			await page.getByTestId('cancel-operation').click();
 			await page.getByRole('radio').first().waitFor();
 			await page.waitForTimeout(200);
@@ -240,6 +287,34 @@ const simulatedApplication = require('./SimulatedApplication.cjs');
 				'Image description is not clipped'
 			);
 		}
+		for (const outcome of ['success', 'failure']) {
+			await page.getByRole('radio').first().click();
+			await page.getByTestId('pick-image').click();
+			await page.locator('.operation .primary').click();
+			await page.getByTestId('cancel-operation').waitFor();
+			await app.evaluate((outcome) => {
+				if (outcome === 'success') globalThis.finishClone({ success: true });
+				else globalThis.failClone(new Error('Simulated failure'));
+			}, outcome);
+			await page.getByRole('radio').first().waitFor();
+			await page.waitForTimeout(200);
+			assert.equal(
+				await app.evaluate(
+					({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().height
+				),
+				fullHeight,
+				`Full height restored after ${outcome}`
+			);
+		}
+		const resizeHistory = await app.evaluate(() => globalThis.resizeHistory);
+		assert.ok(
+			resizeHistory.every((bounds) => bounds.width === fixedWidth),
+			'Window width stays fixed'
+		);
+		assert.ok(
+			resizeHistory.every((bounds) => bounds.height === fullHeight || bounds.height === compactHeight),
+			'Only full and compact heights are used'
+		);
 		for (const mode of ['apply', 'capture']) {
 			await app.evaluate(() => {
 				globalThis.cloneStarted = false;
