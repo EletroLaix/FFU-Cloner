@@ -13,8 +13,8 @@
 				"pattern": { "regexp": "^(FFU_DEBUG_ERROR): (.+)$", "file": 1, "message": 2 },
 				"background": {
 					"activeOnStart": true,
-					"beginsPattern": "^FFU_DEBUG_START$",
-					"endsPattern": "^FFU_DEBUG_READY$"
+					"beginsPattern": "^Preparing FFU Cloner for debugging\\.\\.\\.$",
+					"endsPattern": "^Elevated Electron started; Visual Studio Code can attach\\.$"
 				}
 			}
 		}
