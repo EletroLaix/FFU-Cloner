@@ -3,7 +3,7 @@
 - Complete agreed changes before running a final test session.
 - Group commits by topic without interrupting work for repeated tests.
 - After completing work, commit each distinct topic separately and push `Develop` to `origin`.
-- Make development commits on `Develop` only. Keep `Master` unchanged until the user explicitly requests a release; then create one release commit on `Master` by squash-merging `Develop` and tag that commit.
+- Make development commits on `Develop` only. Keep `Master` unchanged until the user explicitly requests a release; then merge `Develop` into `Master` with an explicit merge commit (`git merge --no-ff Develop`) and tag that merge commit. Preserve development history; do not squash or rebase releases.
 - Keep source code, comments, logs and documentation in English; preserve localized user-interface translations.
 - Write simple, readable code without unnecessary frameworks or layers.
 - Prefer explicit multiline control flow, one statement per line, and blank lines between logical steps. Keep function comments concise and explain purpose or constraints.

@@ -12,7 +12,7 @@
 
 ### Resources
 
-- None.
+- Use explicit merge commits to integrate `Develop` into `Master` for future releases, preserving development history.
 
 ### Known issues
 
