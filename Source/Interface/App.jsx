@@ -22,6 +22,7 @@ export default function App() {
 		disk,
 		choosingDisk,
 		image,
+		selectingImage,
 		loading,
 		diskError,
 		busy,
@@ -52,6 +53,7 @@ export default function App() {
 			t={t}
 			mode={mode}
 			image={image}
+			selecting={selectingImage}
 			busy={busy}
 			confirm={confirm}
 			available={!!api}

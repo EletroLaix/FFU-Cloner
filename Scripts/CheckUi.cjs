@@ -21,12 +21,15 @@ const fs = require('node:fs');
 		await page.getByRole('radio').first().waitFor();
 		assert.equal(
 			await page.evaluate(
-				async () => (await document.fonts.load('600 16px "Space Grotesk"'))[0]?.status
+				async () =>
+					(await document.fonts.load('600 16px "Space Grotesk"'))[0]?.status
 			),
 			'loaded'
 		);
 		assert.equal(
-			await page.getByRole('button', { name: 'Ripristina disco', exact: true }).isDisabled(),
+			await page
+				.getByRole('button', { name: 'Ripristina disco', exact: true })
+				.isDisabled(),
 			true
 		);
 		await page.screenshot({ path: 'Output/Validation/Interface/preview.png' });
@@ -34,7 +37,12 @@ const fs = require('node:fs');
 			window.__starts = 0;
 			window.__sizes = [];
 			window.ffu = {
-				environment: async () => ({ windows: true, admin: true, version, locale: 'it-IT' }),
+				environment: async () => ({
+					windows: true,
+					admin: true,
+					version,
+					locale: 'it-IT'
+				}),
 				listDisks: async () => [
 					{
 						token: 'test',
@@ -67,10 +75,17 @@ const fs = require('node:fs');
 						system: true
 					}
 				],
-				pickImage: async () => ({
-					path: 'C:\\Images\\Production.ffu',
-					name: 'Production.ffu'
-				}),
+				pickImage: async () => {
+					window.__pickerCalls = (window.__pickerCalls || 0) + 1;
+					if (window.__holdPicker) {
+						return new Promise((resolve, reject) => {
+							window.__finishPicker = resolve;
+							window.__failPicker = reject;
+						});
+					}
+					window.__pickerReturnedAt = performance.now();
+					return { path: 'C:\\Images\\Production.ffu', name: 'Production.ffu' };
+				},
 				startClone: async () => {
 					window.__starts++;
 					if (window.__hold)
@@ -99,17 +114,97 @@ const fs = require('node:fs');
 		await page.reload();
 		await page.getByRole('radio').first().waitFor();
 		await page.waitForFunction(() => window.__sizes.length > 0);
+		// A slow picker must not freeze mode changes or apply a result to a different mode.
+		await page.evaluate(() => {
+			window.__holdPicker = true;
+			const button = document.querySelector('[data-testid="pick-image"]');
+			button.click();
+			button.click();
+		});
+		await page.waitForFunction(() => window.__finishPicker);
+		assert.equal(await page.evaluate(() => window.__pickerCalls), 1);
+		assert.equal(await page.getByTestId('pick-image').isDisabled(), true);
+		assert.equal(await page.locator('.image-card').getAttribute('aria-busy'), 'true');
+		await page.getByRole('button', { name: 'Acquisisci', exact: true }).click();
+		await page.getByRole('button', { name: 'Ripristina', exact: true }).click();
+		await page.evaluate(() =>
+			window.__finishPicker({
+				path: 'C:\\Images\\Stale.ffu',
+				name: 'Stale.ffu'
+			})
+		);
+		await page.getByTestId('pick-image').waitFor({ state: 'visible' });
+		await page.waitForFunction(
+			() => !document.querySelector('[data-testid="pick-image"]').disabled
+		);
+		assert.equal(await page.locator('.image-card .selection-summary').count(), 0);
+		await page.evaluate(() => {
+			window.__holdPicker = false;
+		});
+		// Repeated capture/restore selection stays usable after the delayed request ends.
+		await page.evaluate(() => {
+			window.__selectionLatency = [];
+			let previous = window.__pickerCalls;
+			new MutationObserver(() => {
+				if (
+					previous === window.__pickerCalls ||
+					!document.querySelector('.image-card .selection-summary')
+				) {
+					return;
+				}
+				previous = window.__pickerCalls;
+				window.__selectionLatency.push(
+					performance.now() - window.__pickerReturnedAt
+				);
+			}).observe(document.getElementById('root'), {
+				childList: true,
+				subtree: true
+			});
+		});
+		for (let cycle = 0; cycle < 10; cycle++) {
+			await page.getByRole('button', { name: 'Acquisisci', exact: true }).click();
+			await page.getByTestId('pick-image').click();
+			await page.locator('.image-card .selection-summary').waitFor();
+			await page.getByRole('button', { name: 'Ripristina', exact: true }).click();
+			await page.getByTestId('pick-image').click();
+			await page.locator('.image-card .selection-summary').waitFor();
+		}
+		const selectionLatency = await page.evaluate(() =>
+			window.__selectionLatency.slice()
+		);
+		assert.equal(selectionLatency.length, 20);
+		fs.writeFileSync(
+			'Output/Validation/Interface/SelectionLatency.json',
+			JSON.stringify(selectionLatency, null, 2)
+		);
+		console.log(
+			`Repeated selection: ${selectionLatency.length} updates, maximum UI latency ${Math.max(...selectionLatency).toFixed(1)} ms with simulated dialogs.`
+		);
+		await page.getByRole('button', { name: 'Acquisisci', exact: true }).click();
+		await page.getByRole('button', { name: 'Ripristina', exact: true }).click();
 		const fullHeight = await page.evaluate(() => window.__sizes.at(-1));
-		assert.equal(await page.getByRole('radio', { name: /SAMSUNG NVMe/ }).isDisabled(), true);
-		assert.equal(await page.getByRole('radio', { name: /MBR USB/ }).isEnabled(), true);
+		assert.equal(
+			await page.getByRole('radio', { name: /SAMSUNG NVMe/ }).isDisabled(),
+			true
+		);
+		assert.equal(
+			await page.getByRole('radio', { name: /MBR USB/ }).isEnabled(),
+			true
+		);
 		await page.getByRole('button', { name: 'Seleziona immagine FFU' }).click();
 		const imageBox = await page.locator('.image-card').boundingBox();
 		const diskBox = await page.locator('.disk-card').boundingBox();
-		assert.ok(Math.abs(imageBox.y + imageBox.height / 2 - diskBox.y - diskBox.height / 2) < 1);
+		assert.ok(
+			Math.abs(imageBox.y + imageBox.height / 2 - diskBox.y - diskBox.height / 2) <
+				1
+		);
 		assert.equal(await page.locator('.image-card .card-heading .accent').count(), 0);
 		await page.screenshot({ path: 'Output/Validation/Interface/image-selected.png' });
 		await page.getByRole('radio').first().click();
-		await page.waitForFunction((height) => window.__sizes.at(-1) < height - 100, fullHeight);
+		await page.waitForFunction(
+			(height) => window.__sizes.at(-1) < height - 100,
+			fullHeight
+		);
 		const start = page.getByRole('button', { name: 'Ripristina disco', exact: true });
 		assert.equal(await start.isEnabled(), true);
 		await page.screenshot({ path: 'Output/Validation/Interface/restore.png' });
@@ -120,7 +215,12 @@ const fs = require('node:fs');
 		const confirmationBox = await page.getByRole('dialog').boundingBox();
 		const finalBox = await final.boundingBox();
 		assert.ok(
-			Math.abs(confirmationBox.x + confirmationBox.width / 2 - finalBox.x - finalBox.width / 2) < 1
+			Math.abs(
+				confirmationBox.x +
+					confirmationBox.width / 2 -
+					finalBox.x -
+					finalBox.width / 2
+			) < 1
 		);
 		assert.equal(await page.getByRole('dialog').getByRole('textbox').count(), 0);
 		assert.equal(await page.getByRole('dialog').getByRole('button').count(), 2);
@@ -138,13 +238,18 @@ const fs = require('node:fs');
 		await start.click();
 		await final.click();
 		await page.clock.install();
-		await page.evaluate(() => window.__progress({ percent: 25, bytesPerSecond: 125000000 }));
+		await page.evaluate(() =>
+			window.__progress({ percent: 25, bytesPerSecond: 125000000 })
+		);
 		await page.waitForFunction(() =>
 			document.querySelector('.transfer-speed')?.textContent.includes('125')
 		);
 		assert.match(await page.locator('.transfer-speed').textContent(), /125.*MB\/s/);
 		assert.equal(await page.getByRole('radiogroup').count(), 0);
-		assert.equal(await page.getByRole('button', { name: 'Aggiorna dischi' }).count(), 0);
+		assert.equal(
+			await page.getByRole('button', { name: 'Aggiorna dischi' }).count(),
+			0
+		);
 		assert.equal(await page.getByRole('button', { name: 'Cambia file' }).count(), 0);
 		assert.equal(await page.locator('.card.compact').count(), 2);
 		assert.equal(await page.locator('.intro > div').first().textContent(), intro);
@@ -152,7 +257,11 @@ const fs = require('node:fs');
 		for (const speed of [90, 130, 100, 110, 105, 140, 117, 115.5]) {
 			await page.clock.runFor(6000);
 			await page.evaluate(
-				(speed) => window.__progress({ stage: 'Restoring', bytesPerSecond: speed * 1e6 }),
+				(speed) =>
+					window.__progress({
+						stage: 'Restoring',
+						bytesPerSecond: speed * 1e6
+					}),
 				speed
 			);
 		}
@@ -160,23 +269,32 @@ const fs = require('node:fs');
 			document.querySelector('.transfer-speed')?.textContent.includes('115,5')
 		);
 		assert.equal(await page.locator('.speed-chart .speed-line').count(), 1);
-		assert.ok((await page.locator('.speed-line').getAttribute('d')).split('L').length > 5);
+		assert.ok(
+			(await page.locator('.speed-line').getAttribute('d')).split('L').length > 5
+		);
 		for (let i = 0; i < 2; i++) {
 			const content = await page.locator('.app-shell').boundingBox();
-			await page.setViewportSize({ width: 1120, height: Math.ceil(content.height) });
+			await page.setViewportSize({
+				width: 1120,
+				height: Math.ceil(content.height)
+			});
 		}
 		await page.screenshot({ path: 'Output/Validation/Interface/running.png' });
 		await page.setViewportSize({ width: 940, height: 710 });
 		const stopBox = await page.getByTestId('cancel-operation').boundingBox();
 		const operationBox = await page.locator('.operation').boundingBox();
 		assert.ok(stopBox.x + stopBox.width <= operationBox.x + operationBox.width - 10);
-		await page.screenshot({ path: 'Output/Validation/Interface/running-minimum.png' });
+		await page.screenshot({
+			path: 'Output/Validation/Interface/running-minimum.png'
+		});
 		await page.setViewportSize({ width: 1120, height: 800 });
 		await page.clock.runFor(1000);
 		await page.evaluate(() => window.__progress({ bytesPerSecond: null }));
 		await page.clock.runFor(1000);
 		await page.evaluate(() => window.__progress({ bytesPerSecond: 120000000 }));
-		await page.waitForFunction(() => document.querySelectorAll('.speed-line').length === 2);
+		await page.waitForFunction(
+			() => document.querySelectorAll('.speed-line').length === 2
+		);
 		await page.getByTestId('cancel-operation').click();
 		assert.equal(await page.getByTestId('cancel-operation').isDisabled(), true);
 		assert.equal(await page.evaluate(() => window.__cancelRequested), true);
@@ -187,7 +305,10 @@ const fs = require('node:fs');
 		const mbr = page.getByRole('radio', { name: /MBR USB/ });
 		assert.equal(await mbr.isDisabled(), true);
 		assert.match(await mbr.textContent(), /GPT.*MBR/);
-		assert.equal(await page.locator('.workflow .card h2').first().textContent(), 'Disco sorgente');
+		assert.equal(
+			await page.locator('.workflow .card h2').first().textContent(),
+			'Disco sorgente'
+		);
 		await page.screenshot({ path: 'Output/Validation/Interface/capture.png' });
 		await page.getByRole('radio').first().click();
 		await page.getByTestId('pick-image').click();
@@ -195,27 +316,40 @@ const fs = require('node:fs');
 		assert.equal(await page.getByRole('dialog').count(), 0);
 		assert.equal(await page.locator('.speed-line').count(), 0);
 		await page.evaluate(() =>
-			window.__progress({ stage: 'Capturing', percent: 40, bytesPerSecond: 32000000 })
+			window.__progress({
+				stage: 'Capturing',
+				percent: 40,
+				bytesPerSecond: 32000000
+			})
 		);
 		await page.waitForFunction(() =>
 			document.querySelector('.transfer-speed')?.textContent.includes('32')
 		);
 		assert.equal(await page.getByRole('radiogroup').count(), 0);
-		await page.screenshot({ path: 'Output/Validation/Interface/capture-running.png' });
+		await page.screenshot({
+			path: 'Output/Validation/Interface/capture-running.png'
+		});
 		await page.getByTestId('cancel-operation').click();
 		await page.evaluate(() => window.__resolve({ cancelled: true }));
-		await page.getByText('Il file incompleto è stato eliminato.', { exact: false }).waitFor();
+		await page
+			.getByText('Il file incompleto è stato eliminato.', { exact: false })
+			.waitFor();
 		await page.setViewportSize({ width: 940, height: 710 });
 		await page.locator('footer').scrollIntoViewIfNeeded();
 		await page.screenshot({ path: 'Output/Validation/Interface/minimum.png' });
 		assert.ok(
 			await page
 				.locator('footer')
-				.evaluate((el) => el.getBoundingClientRect().bottom <= window.innerHeight),
+				.evaluate(
+					(el) => el.getBoundingClientRect().bottom <= window.innerHeight
+				),
 			'Footer visible at minimum size'
 		);
 		assert.deepEqual(errors, []);
-		assert.equal(await page.evaluate(() => getComputedStyle(document.body).userSelect), 'none');
+		assert.equal(
+			await page.evaluate(() => getComputedStyle(document.body).userSelect),
+			'none'
+		);
 		for (const [name, code, button] of [
 			['English', 'en', 'Capture'],
 			['Deutsch', 'de', 'Erfassen'],
@@ -228,7 +362,9 @@ const fs = require('node:fs');
 			await page.getByRole('menuitemradio', { name: new RegExp(name) }).click();
 			assert.equal(await page.locator('html').getAttribute('lang'), code);
 			await page.getByRole('button', { name: button, exact: true }).waitFor();
-			await page.screenshot({ path: `Output/Validation/Interface/language-${code}.png` });
+			await page.screenshot({
+				path: `Output/Validation/Interface/language-${code}.png`
+			});
 		}
 		await page.reload();
 		assert.equal(await page.locator('html').getAttribute('lang'), 'it');
@@ -245,28 +381,47 @@ const fs = require('node:fs');
 				};
 			});
 		const fullSpacing = await outerSpacing();
-		assert.deepEqual(fullSpacing, { left: '20px', right: '20px', top: '16px', bottom: '12px' });
+		assert.deepEqual(fullSpacing, {
+			left: '20px',
+			right: '20px',
+			top: '16px',
+			bottom: '12px'
+		});
 		assert.ok(
 			await page
 				.locator('footer')
-				.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight)
+				.evaluate(
+					(element) => element.getBoundingClientRect().bottom <= innerHeight
+				)
 		);
 		await page.getByRole('radio').first().click();
 		await page.getByTestId('pick-image').click();
 		for (const width of [860, 1120]) {
 			await page.setViewportSize({ width, height: 512 });
-			for (const name of ['English', 'Deutsch', 'Français', 'Español', 'Polski', 'Italiano']) {
+			for (const name of [
+				'English',
+				'Deutsch',
+				'Français',
+				'Español',
+				'Polski',
+				'Italiano'
+			]) {
 				await page.getByTestId('language-toggle').click();
 				await page.getByRole('menuitemradio', { name: new RegExp(name) }).click();
 				assert.deepEqual(await outerSpacing(), fullSpacing);
 				assert.ok(
 					await page
 						.locator('footer')
-						.evaluate((element) => element.getBoundingClientRect().bottom <= innerHeight),
+						.evaluate(
+							(element) =>
+								element.getBoundingClientRect().bottom <= innerHeight
+						),
 					`${name}: footer is visible at ${width}px`
 				);
 				assert.ok(
-					await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+					await page.evaluate(
+						() => document.documentElement.scrollWidth <= innerWidth
+					),
 					`${name}: no horizontal overflow at ${width}px`
 				);
 			}

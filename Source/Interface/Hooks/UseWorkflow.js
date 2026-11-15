@@ -19,6 +19,7 @@ export function useWorkflow(language, setSystemLanguage) {
 	const [disk, setDisk] = useState(null);
 	const [choosingDisk, setChoosingDisk] = useState(true);
 	const [image, setImage] = useState(null);
+	const [selectingImage, setSelectingImage] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [diskError, setDiskError] = useState('');
 	const [busy, setBusy] = useState(false);
@@ -30,6 +31,8 @@ export function useWorkflow(language, setSystemLanguage) {
 	const [confirm, setConfirm] = useState(false);
 	const [showLogs, setShowLogs] = useState(false);
 	const generation = useRef(0);
+	const selectionGeneration = useRef(0);
+	const selectionPending = useRef(false);
 	const capture = mode === 'capture';
 	const ready =
 		api &&
@@ -39,6 +42,7 @@ export function useWorkflow(language, setSystemLanguage) {
 		disk &&
 		!unavailable(disk, mode) &&
 		!busy &&
+		!selectingImage &&
 		!loading;
 
 	useWindowHeight(api, busy || (!!image && !!disk && !choosingDisk));
@@ -106,6 +110,7 @@ export function useWorkflow(language, setSystemLanguage) {
 			return;
 		}
 		setMode(value);
+		selectionGeneration.current++;
 		setImage(null);
 		setDisk(null);
 		setStatus(null);
@@ -114,17 +119,25 @@ export function useWorkflow(language, setSystemLanguage) {
 
 	// Open the native image picker and retain the selected file.
 	async function pickImage() {
-		if (!api) {
+		if (!api || busy || confirm || selectionPending.current) {
 			return;
 		}
+		const ticket = ++selectionGeneration.current;
+		selectionPending.current = true;
+		setSelectingImage(true);
 		try {
 			const result = await api.pickImage(mode, language);
-			if (result) {
+			if (result && ticket === selectionGeneration.current) {
 				setImage(result);
 				setStatus(null);
 			}
 		} catch (error) {
-			setStatus({ error: true, title: error.message });
+			if (ticket === selectionGeneration.current) {
+				setStatus({ error: true, title: error.message });
+			}
+		} finally {
+			selectionPending.current = false;
+			setSelectingImage(false);
 		}
 	}
 
@@ -203,6 +216,7 @@ export function useWorkflow(language, setSystemLanguage) {
 		disk,
 		choosingDisk,
 		image,
+		selectingImage,
 		loading,
 		diskError,
 		busy,
