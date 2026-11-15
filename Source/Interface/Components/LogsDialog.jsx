@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FileText, FolderOpen, RefreshCw, X } from 'lucide-react';
 
+// Browse session logs while preserving focus and refreshing the selected entry.
 export default function LogsDialog({ t, api, onClose }) {
 	const [data, setData] = useState(null);
 	const [error, setError] = useState('');
@@ -11,7 +12,9 @@ export default function LogsDialog({ t, api, onClose }) {
 		const previousFocus = document.activeElement;
 		closeButton.current?.focus();
 		const escape = (event) => {
-			if (event.key === 'Escape') onClose();
+			if (event.key === 'Escape') {
+				onClose();
+			}
 		};
 		document.addEventListener('keydown', escape);
 		return () => {
@@ -19,6 +22,8 @@ export default function LogsDialog({ t, api, onClose }) {
 			previousFocus?.focus();
 		};
 	}, []);
+
+	// Load the selected log and ignore results from superseded requests.
 	async function refresh(name = selected) {
 		const ticket = ++latest.current;
 		try {
@@ -28,7 +33,9 @@ export default function LogsDialog({ t, api, onClose }) {
 				setError('');
 			}
 		} catch (error) {
-			if (ticket === latest.current) setError(error.message);
+			if (ticket === latest.current) {
+				setError(error.message);
+			}
 		}
 	}
 	useEffect(() => {
@@ -39,6 +46,8 @@ export default function LogsDialog({ t, api, onClose }) {
 			latest.current++;
 		};
 	}, [selected]);
+
+	// Open the log directory through the desktop bridge and report failures.
 	async function openFolder() {
 		try {
 			await api.openLogs();
@@ -54,7 +63,9 @@ export default function LogsDialog({ t, api, onClose }) {
 				aria-modal="true"
 				aria-labelledby="logs-title"
 				onKeyDown={(event) => {
-					if (event.key !== 'Tab') return;
+					if (event.key !== 'Tab') {
+						return;
+					}
 					const items = [
 						...event.currentTarget.querySelectorAll(
 							'button:not(:disabled), select:not(:disabled), [tabindex="0"]'
@@ -63,7 +74,10 @@ export default function LogsDialog({ t, api, onClose }) {
 					if (event.shiftKey && document.activeElement === items[0]) {
 						event.preventDefault();
 						items.at(-1).focus();
-					} else if (!event.shiftKey && document.activeElement === items.at(-1)) {
+					} else if (
+						!event.shiftKey &&
+						document.activeElement === items.at(-1)
+					) {
 						event.preventDefault();
 						items[0].focus();
 					}
@@ -96,7 +110,10 @@ export default function LogsDialog({ t, api, onClose }) {
 					>
 						{data?.files.length ? (
 							data.files.map((file) => (
-								<option key={file.name} value={file.name}>
+								<option
+									key={file.name}
+									value={file.name}
+								>
 									{file.name}
 								</option>
 							))
@@ -112,15 +129,25 @@ export default function LogsDialog({ t, api, onClose }) {
 					>
 						<RefreshCw size={15} />
 					</button>
-					<button className="logs-button" onClick={openFolder}>
+					<button
+						className="logs-button"
+						onClick={openFolder}
+					>
 						<FolderOpen size={15} />
 						{t('logsFolder')}
 					</button>
 				</div>
 				{data?.truncated && <p className="logs-notice">{t('logsTruncated')}</p>}
-				<div className="logs-content" tabIndex="0" aria-label={t('logsContent')}>
+				<div
+					className="logs-content"
+					tabIndex="0"
+					aria-label={t('logsContent')}
+				>
 					{error ? (
-						<p className="logs-error" role="alert">
+						<p
+							className="logs-error"
+							role="alert"
+						>
 							{error}
 						</p>
 					) : !data ? (
@@ -133,7 +160,10 @@ export default function LogsDialog({ t, api, onClose }) {
 								/^(\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:[.,]\d+)?(?:Z|[+-]\d\d:\d\d)?)(.*)$/
 							);
 							return (
-								<div className="log-line" key={index}>
+								<div
+									className="log-line"
+									key={index}
+								>
 									{match ? (
 										<>
 											<span className="log-time">{match[1]}</span>

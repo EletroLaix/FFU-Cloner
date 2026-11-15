@@ -1,7 +1,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
+
+// Unwrap IPC responses and expose backend failures as ordinary errors.
 async function invoke(channel, value) {
 	const result = await ipcRenderer.invoke(channel, value);
-	if (!result.ok) throw new Error(result.error);
+	if (!result.ok) {
+		throw new Error(result.error);
+	}
 	return result.value;
 }
 contextBridge.exposeInMainWorld('ffu', {

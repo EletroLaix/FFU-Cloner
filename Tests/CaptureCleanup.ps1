@@ -1,9 +1,8 @@
 param([string]$Directory)
 $ErrorActionPreference='Stop'
-$tokens=$null; $errors=$null
-$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../Source/Application/Windows/Engine.ps1'),[ref]$tokens,[ref]$errors)
-if ($errors.Count) { throw ($errors | Out-String) }
-$functions=$ast.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Capture-Image','Check-Output')},$true)
+. (Join-Path $PSScriptRoot 'EngineFunctions.ps1')
+$ast = Get-EngineSyntax
+$functions = $ast | ForEach-Object { $_.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Capture-Image','Check-Output')},$true) }
 foreach ($function in $functions) { . ([ScriptBlock]::Create($function.Extent.Text)) }
 $request=[pscustomobject]@{ overwrite=$null }
 function Report([string]$text) { }

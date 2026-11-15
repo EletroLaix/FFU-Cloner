@@ -1,5 +1,36 @@
 # Operation engine boundary
 
+## Source layout
+
+Read the entry points first, then follow the helper for the responsibility you need:
+
+| File | Responsibility |
+| --- | --- |
+| `Source/Application/Engine.cjs` | Select the operating system adapter. |
+| `Source/Application/Desktop/ImagePicker.cjs` | Share the last image folder between modes, persist it, and check overwrite metadata without blocking Electron. |
+| `Source/Application/Windows/Engine.cjs` | Adapt the shared confirmation contract. |
+| `Source/Application/Windows/Dism.cjs` | Validate requests and translate progress messages. |
+| `Source/Application/Windows/EngineProcess.cjs` | Launch PowerShell and manage streams, cancellation, timeouts, and free space. |
+| `Source/Application/Windows/Engine.ps1` | Coordinate preflight checks, preparation, execution, and recovery. |
+| `Source/Application/Windows/DiskInventory.ps1` | Discover disks and verify identity and protection flags. |
+| `Source/Application/Windows/ImageFiles.ps1` | Validate image paths, confirmed replacements, and physical file locations. |
+| `Source/Application/Windows/DiskState.ps1` | Prepare disks, verify isolation, and restore state and drive letters. |
+| `Source/Application/Windows/Dism.ps1` | Execute DISM, sample throughput, and stop its process tree on failure. |
+| `Source/Application/Windows/Capture.ps1` | Create a temporary image, publish it atomically, and remove incomplete files. |
+| `Source/Application/Windows/OperationSupport.ps1` | Report messages and detect cancellation. |
+| `Source/Application/Windows/VolumeAccess.ps1` | Access native Windows volume controls. |
+| `Source/Application/Windows/DiskPerformance.ps1` | Read native disk performance counters. |
+| `Source/Interface/App.jsx` | Assemble the page and connect presentation components. |
+| `Source/Interface/Hooks/UseWorkflow.js` | Manage selection, operation state, progress, and backend calls. |
+
+PowerShell helpers are dot-sourced into the engine's script scope. They share the current `$request` and `$sessionLog`; loading a helper only defines functions. Native interop helpers are loaded when an operation needs them. Keep these files together when packaging; the existing PowerShell unpack pattern includes every helper.
+
+Use tabs displayed at four columns, explicit control-flow blocks, and one statement per line. Separate logical steps with blank lines and explain each function's purpose in English. Prettier uses a 90-column target and puts JSX attributes on separate lines. Keep related steps together instead of creating a separate file for every small function.
+
+The PowerShell tests parse every Windows helper and extract only the functions under test. They do not run the entry point; OS calls are replaced with simulated devices and harmless processes.
+
+## Adapter contract
+
 `Source/Application/Engine.cjs` selects the implementation for the current operating system. The desktop IPC uses only the selected engine. Windows-specific JavaScript and PowerShell live in `Source/Application/Windows`; unimplemented platforms reject disk operations and report an unavailable environment.
 
 Each implementation exposes three asynchronous methods:

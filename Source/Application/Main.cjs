@@ -5,8 +5,9 @@ const registerIpc = require('./Desktop/Ipc.cjs');
 const indexFile = path.join(__dirname, '..', '..', 'Output', 'Renderer', 'index.html');
 let window, operations;
 
-if (!app.requestSingleInstanceLock()) app.quit();
-else {
+if (!app.requestSingleInstanceLock()) {
+	app.quit();
+} else {
 	app.on('second-instance', () => {
 		if (window) {
 			window.restore();
@@ -16,8 +17,8 @@ else {
 	app.whenReady().then(() => {
 		app.setName('FFU Cloner');
 		Menu.setApplicationMenu(null);
-		session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
-			callback(false)
+		session.defaultSession.setPermissionRequestHandler(
+			(_contents, _permission, callback) => callback(false)
 		);
 		window = createWindow();
 		operations = registerIpc(window, indexFile);
@@ -34,5 +35,7 @@ else {
 }
 app.on('window-all-closed', () => app.quit());
 app.on('before-quit', (event) => {
-	if (operations?.isBusy()) event.preventDefault();
+	if (operations?.isBusy()) {
+		event.preventDefault();
+	}
 });

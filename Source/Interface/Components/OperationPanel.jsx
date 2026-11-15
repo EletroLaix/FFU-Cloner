@@ -12,17 +12,44 @@ import {
 import SpeedHistory from './SpeedHistory.jsx';
 import { translateError } from '../Localization/Localization.mjs';
 
-function operationTitle({ status, t, language, available, preview, environment, ready, hasDisk, hasImage }) {
+// Choose the operation heading from progress, selection, and environment state.
+function operationTitle({
+	status,
+	t,
+	language,
+	available,
+	preview,
+	environment,
+	ready,
+	hasDisk,
+	hasImage
+}) {
 	const message = status?.key ? t(status.key) : translateError(language, status?.title);
-	if (message) return message;
-	if (!available) return t(preview ? 'previewTitle' : 'bridgeError');
-	if (environment.windows === null) return t('connecting');
-	if (!environment.windows) return t('windowsRequired');
-	if (!environment.admin) return t('adminRequired');
-	if (ready) return t('ready');
-	if (!hasDisk && !hasImage) return t('selectBoth');
+	if (message) {
+		return message;
+	}
+	if (!available) {
+		return t(preview ? 'previewTitle' : 'bridgeError');
+	}
+	if (environment.windows === null) {
+		return t('connecting');
+	}
+	if (!environment.windows) {
+		return t('windowsRequired');
+	}
+	if (!environment.admin) {
+		return t('adminRequired');
+	}
+	if (ready) {
+		return t('ready');
+	}
+	if (!hasDisk && !hasImage) {
+		return t('selectBoth');
+	}
 	return t(!hasImage ? 'selectImage' : 'selectDisk');
 }
+
+// Present readiness, progress, throughput, and start or stop controls.
 export default function OperationPanel(props) {
 	const {
 		t,
@@ -63,7 +90,10 @@ export default function OperationPanel(props) {
 		>
 			<div className="operation-row">
 				<span className="status-symbol">
-					<StatusIcon size={22} className={busy ? 'spin' : ''} />
+					<StatusIcon
+						size={22}
+						className={busy ? 'spin' : ''}
+					/>
 				</span>
 				<div className="operation-copy">
 					<strong title={title}>{title}</strong>
@@ -72,14 +102,20 @@ export default function OperationPanel(props) {
 				{busy && (
 					<div className="speed-telemetry">
 						<span title={t('speedHistory')}>
-							<SpeedHistory samples={speedSamples} label={t('speedHistory')} />
+							<SpeedHistory
+								samples={speedSamples}
+								label={t('speedHistory')}
+							/>
 						</span>
-						<span className="transfer-speed" title={t('speedHint')}>
+						<span
+							className="transfer-speed"
+							title={t('speedHint')}
+						>
 							{speed == null
 								? '—'
-								: new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(
-										speed / 1e6
-									)}{' '}
+								: new Intl.NumberFormat(language, {
+										maximumFractionDigits: 1
+									}).format(speed / 1e6)}{' '}
 							<small>MB/s</small>
 						</span>
 					</div>
@@ -96,7 +132,11 @@ export default function OperationPanel(props) {
 						{t(stopping ? 'stopping' : 'stopOperation')}
 					</button>
 				) : (
-					<button className="primary" disabled={!ready} onClick={onStart}>
+					<button
+						className="primary"
+						disabled={!ready}
+						onClick={onStart}
+					>
 						{capture ? <Upload size={18} /> : <Download size={18} />}
 						<span>{capture ? t('captureDisk') : t('restoreDisk')}</span>
 						<ArrowRight size={17} />

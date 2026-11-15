@@ -96,4 +96,4 @@ jobs:
           shopt -s nullglob
           installers=(Output/Installer/*.msi)
           if (( ${#installers[@]} != 1 )); then echo 'Expected exactly one MSI installer.' >&2; exit 1; fi
-          gh release create "$GITHUB_REF_NAME" "${installers[0]}" --verify-tag --title "FFU Cloner $GITHUB_REF_NAME" --notes-file Output/Release/Notes.md
+          gh release create "$GITHUB_REF_NAME" "${installers[0]}#Windows MSI installer" --verify-tag --title "FFU Cloner $GITHUB_REF_NAME" --notes-file Output/Release/Notes.md

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Download, Upload } from 'lucide-react';
+
+// Explain the current mode and offer capture or restore selection.
 export default function Introduction({ t, mode, busy, confirm, onModeChange }) {
 	const capture = mode === 'capture';
 	return (
@@ -14,7 +16,10 @@ export default function Introduction({ t, mode, busy, confirm, onModeChange }) {
 				<p>{t('subtitle')}</p>
 			</div>
 			{!busy && (
-				<div className="mode-switch" aria-label={t('mode')}>
+				<div
+					className="mode-switch"
+					aria-label={t('mode')}
+				>
 					<button
 						className={!capture ? 'active' : ''}
 						onClick={() => onModeChange('apply')}

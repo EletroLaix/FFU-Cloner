@@ -1,5 +1,50 @@
 # FFU Cloner Changelog
 
+## Unreleased
+
+### Features
+
+- None.
+
+### BugFix
+
+- None.
+
+### Resources
+
+- None.
+
+### Known issues
+
+- See the latest release for existing limitations.
+
+## Release: 0.1.3
+
+<div class="Subtitle"><strong>Build:</strong> 0.1.3 <strong>Date:</strong> 15/11/2026</div>
+
+### Features
+
+- Open image dialogs on the Desktop initially and remember the last selected folder across capture, restore, and application restarts.
+
+### BugFix
+
+- Keep capture file metadata checks asynchronous, prevent overlapping image dialogs, and discard selections returned after a mode change.
+- Show a pending indicator and disable image selection and operation start while the file picker is awaiting a result.
+- Restore accessible data partition drive letters after a successful disk restore while respecting hidden and offline volumes.
+- Publish MSI release assets with square brackets in their filenames without GitHub CLI interpreting the paths as glob patterns.
+
+### Resources
+
+- Split the Windows engine into focused disk inventory, image validation, disk state, DISM process, capture, and operation support files.
+- Separate the interface workflow from the page layout and the PowerShell process lifecycle from DISM request handling.
+- Expand source formatting, add English function comments, and adopt a narrower automatic formatting width with one JSX attribute per line.
+
+### Known issues
+
+- Boot validation on an intended target machine is still required.
+- The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
+- FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
+
 ## Release: 0.1.2
 
 <div class="Subtitle"><strong>Build:</strong> 0.1.2 <strong>Date:</strong> 14/11/2026</div>
