@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const engine = require('../Engine.cjs');
 const { readLogs } = require('../Logs.cjs');
 const { isTrustedRenderer } = require('../RendererOrigin.cjs');
+const { createImagePicker } = require('./ImagePicker.cjs');
 const dialogText = {
 	en: require('../../Resources/Locales/en.json'),
 	it: require('../../Resources/Locales/it.json'),
@@ -21,6 +22,12 @@ module.exports = function registerIpc(window, indexFile) {
 	let lastLog = null;
 	let operationController = null;
 	const disks = new Map();
+	const imagePicker = createImagePicker({
+		dialog,
+		window,
+		desktop: app.getPath('desktop'),
+		preferencesFile: path.join(app.getPath('userData'), 'Preferences.json')
+	});
 	const logDirectory = path.join(
 		process.env.LOCALAPPDATA || app.getPath('userData'),
 		'FFUCloner',
@@ -82,39 +89,18 @@ module.exports = function registerIpc(window, indexFile) {
 		if (busy || !['apply', 'capture'].includes(mode)) {
 			throw new Error('Operation unavailable.');
 		}
-		const text = dialogText[language] || dialogText.en;
-		const options = {
-			title: mode === 'apply' ? text.dialogOpen : text.dialogSave,
-			filters: [{ name: 'Full Flash Update', extensions: ['ffu'] }]
-		};
-		const result =
-			mode === 'apply'
-				? await dialog.showOpenDialog(window, {
-						...options,
-						properties: ['openFile']
-					})
-				: await dialog.showSaveDialog(window, {
-						...options,
-						defaultPath: 'Image.ffu',
-						properties: ['showOverwriteConfirmation']
-					});
-		if (result.canceled) {
+		const selection = await imagePicker.pick(
+			mode,
+			dialogText[language] || dialogText.en
+		);
+		if (!selection) {
 			return null;
 		}
-		const image = result.filePath || result.filePaths[0];
-		let overwrite = null;
-		if (mode === 'capture' && fs.existsSync(image)) {
-			const stat = fs.lstatSync(image);
-			if (!stat.isFile() || stat.isSymbolicLink()) {
-				throw new Error('Invalid image file.');
-			}
-			overwrite = { size: stat.size, modified: Math.floor(stat.mtimeMs) };
-		}
-		chosenImage = { mode, path: image, overwrite };
-		return { path: image, name: path.basename(image) };
+		chosenImage = selection;
+		return { path: selection.path, name: path.basename(selection.path) };
 	});
 	handle('start-clone', async (request) => {
-		if (busy) {
+		if (busy || imagePicker.isPicking()) {
 			throw new Error('An operation is already running.');
 		}
 		if (!request || !['apply', 'capture'].includes(request.mode)) {
