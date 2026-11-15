@@ -4,10 +4,12 @@
 
 ### Features
 
-- None.
+- Open image dialogs on the Desktop initially and remember the last selected folder across capture, restore, and application restarts.
 
 ### BugFix
 
+- Keep capture file metadata checks asynchronous, prevent overlapping image dialogs, and discard selections returned after a mode change.
+- Show a pending indicator and disable image selection and operation start while the file picker is awaiting a result.
 - Restore accessible data partition drive letters after a successful disk restore while respecting hidden and offline volumes.
 - Publish MSI release assets with square brackets in their filenames without GitHub CLI interpreting the paths as glob patterns.
 

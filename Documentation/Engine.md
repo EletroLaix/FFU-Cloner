@@ -7,6 +7,7 @@ Read the entry points first, then follow the helper for the responsibility you n
 | File | Responsibility |
 | --- | --- |
 | `Source/Application/Engine.cjs` | Select the operating system adapter. |
+| `Source/Application/Desktop/ImagePicker.cjs` | Share the last image folder between modes, persist it, and check overwrite metadata without blocking Electron. |
 | `Source/Application/Windows/Engine.cjs` | Adapt the shared confirmation contract. |
 | `Source/Application/Windows/Dism.cjs` | Validate requests and translate progress messages. |
 | `Source/Application/Windows/EngineProcess.cjs` | Launch PowerShell and manage streams, cancellation, timeouts, and free space. |
