@@ -1,6 +1,6 @@
 # FFU Cloner
 
-[![Release v0.1.2](https://img.shields.io/badge/release-v0.1.2-4c9aff?style=flat-square)](https://github.com/EletroLaix/FFU-Cloner/releases/latest)
+[![Release v0.1.3](https://img.shields.io/badge/release-v0.1.3-4c9aff?style=flat-square)](https://github.com/EletroLaix/FFU-Cloner/releases/latest)
 ![Windows x64](https://img.shields.io/badge/platform-Windows%20x64-0078d4?style=flat-square)
 ![Installer MSI](https://img.shields.io/badge/installer-MSI-805ad5?style=flat-square)
 

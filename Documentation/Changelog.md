@@ -4,6 +4,26 @@
 
 ### Features
 
+- None.
+
+### BugFix
+
+- None.
+
+### Resources
+
+- None.
+
+### Known issues
+
+- See the latest release for existing limitations.
+
+## Release: 0.1.3
+
+<div class="Subtitle"><strong>Build:</strong> 0.1.3 <strong>Date:</strong> 15/11/2026</div>
+
+### Features
+
 - Open image dialogs on the Desktop initially and remember the last selected folder across capture, restore, and application restarts.
 
 ### BugFix
@@ -21,7 +41,9 @@
 
 ### Known issues
 
-- See the latest release for existing limitations.
+- Boot validation on an intended target machine is still required.
+- The MSI is unsigned, and its standard installer creates a desktop shortcut without asking.
+- FFU operations are currently supported only on Windows. Other platforms and image formats are not implemented.
 
 ## Release: 0.1.2
 
