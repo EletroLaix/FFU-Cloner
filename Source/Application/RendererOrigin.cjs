@@ -8,10 +8,12 @@ function canonicalFile(file) {
 	const archive = parts.findIndex((part) => part.toLowerCase().endsWith('.asar'));
 	const physical = archive < 0 ? file : parts.slice(0, archive + 1).join(path.sep);
 	const resolved = fs.realpathSync.native(physical);
-	const result = archive < 0 ? resolved : path.join(resolved, ...parts.slice(archive + 1));
+	const result =
+		archive < 0 ? resolved : path.join(resolved, ...parts.slice(archive + 1));
 	return process.platform === 'win32' ? result.toLowerCase() : result;
 }
 
+// Accept privileged requests only from the main frame of the packaged interface.
 function isTrustedRenderer(event, contents, entryFile) {
 	try {
 		const frame = event.senderFrame;
@@ -24,10 +26,13 @@ function isTrustedRenderer(event, contents, entryFile) {
 			!Number.isInteger(frame.routingId) ||
 			frame.processId !== main.processId ||
 			frame.routingId !== main.routingId
-		)
+		) {
 			return false;
+		}
 		const url = new URL(frame.url);
-		if (url.protocol !== 'file:' || url.hostname || url.search || url.hash) return false;
+		if (url.protocol !== 'file:' || url.hostname || url.search || url.hash) {
+			return false;
+		}
 		return canonicalFile(fileURLToPath(url)) === canonicalFile(entryFile);
 	} catch {
 		return false;

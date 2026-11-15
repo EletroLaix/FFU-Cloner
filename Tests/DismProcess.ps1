@@ -1,9 +1,8 @@
 param([string]$CancelFile, [ValidateSet('success','failure','cancel','stream-error','speed-capture','speed-apply')][string]$Scenario)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
-$tokens = $null; $errors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../Source/Application/Windows/Engine.ps1'), [ref]$tokens, [ref]$errors)
-if ($errors.Count) { throw ($errors | Out-String) }
+. (Join-Path $PSScriptRoot 'EngineFunctions.ps1')
+$ast = Get-EngineSyntax
 $request = [pscustomobject]@{ cancelFile = $CancelFile; mode='apply'; disk=@{ number=1 } }
 if ($Scenario -like 'speed-*') {
 	$request.mode = $Scenario.Substring(6)
@@ -15,10 +14,17 @@ function Report([string]$text) {
 	[Console]::Out.WriteLine($text)
 }
 # Exercise the production stream/cancellation loop with harmless cmd/ping processes instead of DISM.
-$functions = $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Check-Cancel','Dism') }, $true)
+$functions = $ast | ForEach-Object { $_.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Check-Cancel','Dism') }, $true) }
 foreach ($function in $functions) {
 	$source = $function.Extent.Text.Replace('$info.FileName = "$env:WINDIR\System32\dism.exe"', '$info.FileName = $env:ComSpec')
-	$source = $source.Replace('$info.Arguments = ($arguments | ForEach-Object { ''"'' + $_ + ''"'' }) -join '' ''', '$info.Arguments = $script:testArguments')
+	$argumentsAssignment = $function.Body.Find({
+		param($node)
+		$node -is [Management.Automation.Language.AssignmentStatementAst] -and
+			$node.Left.Extent.Text -eq '$info.Arguments'
+	}, $true)
+	if ($argumentsAssignment) {
+		$source = $source.Replace($argumentsAssignment.Extent.Text, '$info.Arguments = $script:testArguments')
+	}
 	$source = $source.Replace('$PSScriptRoot','$applicationDirectory')
 	. ([ScriptBlock]::Create($source))
 }

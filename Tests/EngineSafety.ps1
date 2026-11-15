@@ -1,14 +1,13 @@
 # Load only pure safety functions from the actual engine; do not execute its entry point.
 $ErrorActionPreference = 'Stop'
 $script = Join-Path $PSScriptRoot '../Source/Application/Windows/Engine.ps1'
-$tokens = $null; $parseErrors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile($script, [ref]$tokens, [ref]$parseErrors)
-if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+. (Join-Path $PSScriptRoot 'EngineFunctions.ps1')
+$ast = Get-EngineSyntax
 $storageTokens = $null; $storageErrors = $null
 [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../Scripts/HardwareStorage.ps1'), [ref]$storageTokens, [ref]$storageErrors) | Out-Null
 if ($storageErrors.Count) { throw ($storageErrors | Out-String) }
 $applicationDirectory = Split-Path $script
-$functions = $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Identity','Check-Disk','Check-Cancel','Prepare-Disk','Test-VolumesOffline') }, $true)
+$functions = $ast | ForEach-Object { $_.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Identity','Check-Disk','Check-Cancel','Prepare-Disk','Test-VolumesOffline') }, $true) }
 foreach ($function in $functions) { . ([ScriptBlock]::Create($function.Extent.Text.Replace('$PSScriptRoot','$applicationDirectory'))) }
 $request = [pscustomobject]@{ mode = 'apply' }
 $expected = [pscustomobject]@{ number=1; uniqueId='TEST'; serial='SERIAL'; size=[UInt64]32017047552; name='Test USB'; bus='USB'; removable=$true; system=$false; boot=$false; paging=$false; offline=$true; volumesOffline=$false; readOnly=$false; style='GPT' }

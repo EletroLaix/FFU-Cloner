@@ -1,10 +1,9 @@
 $ErrorActionPreference = 'Stop'
 $source = Join-Path $PSScriptRoot '../Source/Application/Windows/Engine.ps1'
-$tokens = $null; $errors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$errors)
-if ($errors.Count) { throw ($errors | Out-String) }
+. (Join-Path $PSScriptRoot 'EngineFunctions.ps1')
+$ast = Get-EngineSyntax
 $applicationDirectory = Split-Path $source
-$functions = $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Identity','Save-DiskState','Restore-DiskState','Restore-DriveLetters') }, $true)
+$functions = $ast | ForEach-Object { $_.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Identity','Save-DiskState','Restore-DiskState','Restore-DriveLetters') }, $true) }
 foreach ($function in $functions) { . ([ScriptBlock]::Create($function.Extent.Text.Replace('$PSScriptRoot','$applicationDirectory'))) }
 Add-Type 'public static class FfuVolume { public static bool IsOffline(string path) { return false; } public static void Offline(string path) { } public static void Online(string path) { } }'
 $script:disk = [pscustomobject]@{ number=1; uniqueId='USB'; serial='123'; size=[UInt64]32000000000; name='Test'; bus='USB'; removable=$false; offline=$false; system=$false; boot=$false; paging=$false }
