@@ -232,7 +232,7 @@ function Save-DiskState($disk) {
 		$paths = @($partition.AccessPaths | Where-Object { $_ -match '^\\\\\?\\Volume\{' })
 		$offline = [bool]$partition.IsOffline
 		if (!$offline -and $paths.Count) { $offline = [FfuVolume]::IsOffline($paths[0]) }
-		$state.partitions += [pscustomobject]@{ number = $partition.PartitionNumber; offline = $offline }
+		$state.partitions += [pscustomobject]@{ number = $partition.PartitionNumber; guid = [string]$partition.Guid; letter = [string]$partition.DriveLetter; offline = $offline }
 	}
 	return $state
 }
@@ -258,6 +258,27 @@ function Restore-DiskState($state) {
 		foreach ($volume in $paths) {
 			if ($original.offline) { [FfuVolume]::Offline($volume) }
 			else { [FfuVolume]::Online($volume) }
+		}
+	}
+}
+
+function Restore-DriveLetters($state) {
+	if ($state.disk.offline) { return }
+	$current = Get-Disks | Where-Object number -eq $state.disk.number
+	if (!$current -or (Identity $state.disk) -cne (Identity $current) -or $current.system -or $current.boot -or $current.paging -or $current.offline) {
+		throw 'Disk identity or protection changed; drive letters could not be restored.'
+	}
+	Update-Disk -Number $current.number
+	foreach ($partition in @(Get-Partition -DiskNumber $current.number)) {
+		if ($partition.Type -ne 'Basic' -or $partition.IsHidden -or $partition.IsOffline -or $partition.NoDefaultDriveLetter -or $partition.IsSystem -or $partition.IsBoot -or $partition.DriveLetter -match '^[A-Za-z]$') { continue }
+		$volume = $partition | Get-Volume -ErrorAction SilentlyContinue
+		if (!$volume -or $volume.FileSystem -notin @('NTFS', 'ReFS', 'exFAT', 'FAT32', 'FAT')) { continue }
+		$original = @($state.partitions | Where-Object { $_.guid -and $_.guid -eq [string]$partition.Guid }) | Select-Object -First 1
+		if ($original -and ($original.offline -or $original.letter -notmatch '^[A-Za-z]$')) { continue }
+		if ($original -and !(Get-Partition -DriveLetter $original.letter -ErrorAction SilentlyContinue)) {
+			$partition | Add-PartitionAccessPath -AccessPath ($original.letter + ':\')
+		} else {
+			$partition | Add-PartitionAccessPath -AssignDriveLetter
 		}
 	}
 }
@@ -329,6 +350,7 @@ try {
 				Report 'Original disk state restored.'
 			} catch { throw "Could not restore the original disk state: $($_.Exception.Message)" }
 		}
+		if ($request.mode -eq 'apply') { Restore-DriveLetters $originalState }
 		Report ('FFU_RESULT:' + (@{ success = $true; image = $image; logPath = $sessionLog } | ConvertTo-Json -Compress))
 	}
 	finally {

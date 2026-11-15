@@ -8,6 +8,7 @@
 
 ### BugFix
 
+- Restore accessible data partition drive letters after a successful disk restore while respecting hidden and offline volumes.
 - Publish MSI release assets with square brackets in their filenames without GitHub CLI interpreting the paths as glob patterns.
 
 ### Resources
