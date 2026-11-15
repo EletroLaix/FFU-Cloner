@@ -2,9 +2,12 @@
 
 - Complete agreed changes before running a final test session.
 - Group commits by topic without interrupting work for repeated tests.
+- After completing work, commit each distinct topic separately and push `Develop` to `origin`.
 - Make development commits on `Develop` only. Keep `Master` unchanged until the user explicitly requests a release; then create one release commit on `Master` by squash-merging `Develop` and tag that commit.
 - Keep source code, comments, logs and documentation in English; preserve localized user-interface translations.
 - Write simple, readable code without unnecessary frameworks or layers.
+- Prefer explicit multiline control flow, one statement per line, and blank lines between logical steps. Keep function comments concise and explain purpose or constraints.
+- Split files by responsibility when they mix unrelated concerns; keep entry points focused on coordination and UI components focused on presentation.
 - Indent with tabs displayed at four columns; use spaces where a format requires them.
 - Remove obsolete sources and unused files; history remains in Git.
 - Use complete folder and project source file names with an initial capital letter. Preserve conventional tool-defined names such as `node_modules`, `package.json`, `index.html`, locale codes and test suffixes.

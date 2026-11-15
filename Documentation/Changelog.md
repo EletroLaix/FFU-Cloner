@@ -13,7 +13,9 @@
 
 ### Resources
 
-- None.
+- Split the Windows engine into focused disk inventory, image validation, disk state, DISM process, capture, and operation support files.
+- Separate the interface workflow from the page layout and the PowerShell process lifecycle from DISM request handling.
+- Expand source formatting, add English function comments, and adopt a narrower automatic formatting width with one JSX attribute per line.
 
 ### Known issues
 
