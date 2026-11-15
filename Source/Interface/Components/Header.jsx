@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Copy, Globe2, ChevronDown, Check, FolderOpen, Minus, X } from 'lucide-react';
 import { languages } from '../Localization/Localization.mjs';
 
+// Display language, log, and window controls for the current workflow.
 export default function Header({
 	t,
 	language,
@@ -15,17 +16,25 @@ export default function Header({
 }) {
 	const [languageOpen, setLanguageOpen] = useState(false);
 	const languageControl = useRef(null);
+
+	// Apply the selected language and remember it for the next session.
 	function chooseLanguage(code) {
 		onLanguageChange(code);
 		setLanguageOpen(false);
 	}
 	useEffect(() => {
-		if (!languageOpen) return;
+		if (!languageOpen) {
+			return;
+		}
 		const dismiss = (event) => {
-			if (!languageControl.current?.contains(event.target)) setLanguageOpen(false);
+			if (!languageControl.current?.contains(event.target)) {
+				setLanguageOpen(false);
+			}
 		};
 		const escape = (event) => {
-			if (event.key === 'Escape') setLanguageOpen(false);
+			if (event.key === 'Escape') {
+				setLanguageOpen(false);
+			}
 		};
 		document.addEventListener('pointerdown', dismiss);
 		document.addEventListener('keydown', escape);
@@ -48,7 +57,10 @@ export default function Header({
 				</div>
 			</div>
 			<div className="header-actions">
-				<div className="language-control" ref={languageControl}>
+				<div
+					className="language-control"
+					ref={languageControl}
+				>
 					<button
 						className="language-toggle"
 						data-testid="language-toggle"
@@ -64,7 +76,11 @@ export default function Header({
 						<ChevronDown size={11} />
 					</button>
 					{languageOpen && (
-						<div className="language-options" role="menu" aria-label={t('language')}>
+						<div
+							className="language-options"
+							role="menu"
+							aria-label={t('language')}
+						>
 							{Object.entries(languages).map(([code, name]) => (
 								<button
 									role="menuitemradio"
@@ -72,7 +88,9 @@ export default function Header({
 									key={code}
 									onClick={() => chooseLanguage(code)}
 								>
-									<span className="language-code">{code.toUpperCase()}</span>
+									<span className="language-code">
+										{code.toUpperCase()}
+									</span>
 									<span>{name}</span>
 									{language === code && <Check size={12} />}
 								</button>

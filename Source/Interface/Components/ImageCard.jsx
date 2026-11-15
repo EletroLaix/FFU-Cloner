@@ -1,5 +1,7 @@
 import React from 'react';
 import { FileImage, Pencil, Plus, ArrowUpRight } from 'lucide-react';
+
+// Display the selected FFU file and the native file picker action.
 export default function ImageCard({ t, mode, image, busy, confirm, available, onPick }) {
 	const capture = mode === 'capture';
 	return (

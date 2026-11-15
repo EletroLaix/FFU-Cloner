@@ -1,6 +1,16 @@
 import React from 'react';
-import { HardDrive, Pencil, RefreshCw, LoaderCircle, LockKeyhole, Check, ShieldCheck } from 'lucide-react';
+import {
+	HardDrive,
+	Pencil,
+	RefreshCw,
+	LoaderCircle,
+	LockKeyhole,
+	Check,
+	ShieldCheck
+} from 'lucide-react';
 import { unavailable, formatSize } from '../Helpers/Disks.mjs';
+
+// Show disk eligibility and let the user select or refresh the available devices.
 export default function DiskCard({
 	t,
 	mode,
@@ -19,7 +29,9 @@ export default function DiskCard({
 	const capture = mode === 'capture';
 	const gb = (size) => formatSize(size, language);
 	return (
-		<section className={`card disk-card ${disk && !choosingDisk ? 'complete compact' : ''}`}>
+		<section
+			className={`card disk-card ${disk && !choosingDisk ? 'complete compact' : ''}`}
+		>
 			<div className="card-heading">
 				<span className="step">{capture ? '01' : '02'}</span>
 				<h2>{capture ? t('diskSource') : t('diskTarget')}</h2>
@@ -31,7 +43,10 @@ export default function DiskCard({
 						aria-label={t('refreshDisks')}
 						title={t('refreshDisks')}
 					>
-						<RefreshCw size={17} className={loading ? 'spin' : ''} />
+						<RefreshCw
+							size={17}
+							className={loading ? 'spin' : ''}
+						/>
 					</button>
 				)}
 			</div>
@@ -67,7 +82,10 @@ export default function DiskCard({
 				>
 					{loading ? (
 						<div className="empty">
-							<LoaderCircle size={30} className="spin" />
+							<LoaderCircle
+								size={30}
+								className="spin"
+							/>
 							<span>{t('scanning')}</span>
 						</div>
 					) : disks.length === 0 ? (
@@ -80,7 +98,8 @@ export default function DiskCard({
 						[...disks]
 							.sort(
 								(a, b) =>
-									Number(!!unavailable(a, mode)) - Number(!!unavailable(b, mode)) ||
+									Number(!!unavailable(a, mode)) -
+										Number(!!unavailable(b, mode)) ||
 									a.number - b.number
 							)
 							.map((item) => {
@@ -102,15 +121,22 @@ export default function DiskCard({
 										}
 									>
 										<span className="disk-symbol">
-											{reason ? <LockKeyhole size={20} /> : <HardDrive size={21} />}
+											{reason ? (
+												<LockKeyhole size={20} />
+											) : (
+												<HardDrive size={21} />
+											)}
 										</span>
 										<span className="disk-description">
 											<strong>{item.name}</strong>
 											<span>
-												{t('disk')} {item.number} <i /> {gb(item.size)} GB <i />{' '}
-												{item.bus}
+												{t('disk')} {item.number} <i />{' '}
+												{gb(item.size)} GB <i /> {item.bus}
 											</span>
-											<small>{reason || `S/N ${item.serial || t('notExposed')}`}</small>
+											<small>
+												{reason ||
+													`S/N ${item.serial || t('notExposed')}`}
+											</small>
 										</span>
 										<span className="radio-indicator">
 											{selected && <Check size={12} />}

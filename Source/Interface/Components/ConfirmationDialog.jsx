@@ -3,13 +3,16 @@ import { X, CircleAlert, HardDrive, Download } from 'lucide-react';
 import { formatSize } from '../Helpers/Disks.mjs';
 
 // Keep keyboard focus inside the destructive confirmation until it is dismissed.
+// Require an explicit confirmation before restoring the selected disk.
 export default function ConfirmationDialog({ t, language, disk, onClose, onConfirm }) {
 	const confirmButton = useRef(null);
 	const gb = (size) => formatSize(size, language);
 	useEffect(() => {
 		confirmButton.current?.focus();
 		const escape = (event) => {
-			if (event.key === 'Escape') onClose();
+			if (event.key === 'Escape') {
+				onClose();
+			}
 		};
 		document.addEventListener('keydown', escape);
 		return () => document.removeEventListener('keydown', escape);
@@ -22,12 +25,19 @@ export default function ConfirmationDialog({ t, language, disk, onClose, onConfi
 				aria-modal="true"
 				aria-labelledby="confirm-title"
 				onKeyDown={(event) => {
-					if (event.key !== 'Tab') return;
-					const focusable = [...event.currentTarget.querySelectorAll('button:not(:disabled)')];
+					if (event.key !== 'Tab') {
+						return;
+					}
+					const focusable = [
+						...event.currentTarget.querySelectorAll('button:not(:disabled)')
+					];
 					if (event.shiftKey && document.activeElement === focusable[0]) {
 						event.preventDefault();
 						focusable.at(-1).focus();
-					} else if (!event.shiftKey && document.activeElement === focusable.at(-1)) {
+					} else if (
+						!event.shiftKey &&
+						document.activeElement === focusable.at(-1)
+					) {
 						event.preventDefault();
 						focusable[0].focus();
 					}
@@ -56,7 +66,11 @@ export default function ConfirmationDialog({ t, language, disk, onClose, onConfi
 				</div>
 				<p>{t('applyWarning')}</p>
 				<div className="confirm-actions">
-					<button className="primary" ref={confirmButton} onClick={onConfirm}>
+					<button
+						className="primary"
+						ref={confirmButton}
+						onClick={onConfirm}
+					>
 						<Download size={17} /> {t('eraseRestore')}
 					</button>
 				</div>

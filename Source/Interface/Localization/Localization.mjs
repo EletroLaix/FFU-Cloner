@@ -14,12 +14,16 @@ export const languages = {
 	pl: 'Polski'
 };
 export const messages = { en, it, de, fr, es, pl };
+
+// Match a regional locale to a supported language, falling back to English.
 export function resolveLanguage(locale) {
 	const code = String(locale || '')
 		.toLowerCase()
 		.split(/[-_]/)[0];
 	return Object.hasOwn(messages, code) ? code : 'en';
 }
+
+// Resolve a message and substitute its named values.
 export function translate(language, key, values = {}) {
 	const text = (messages[language] || en)[key] || en[key] || key;
 	return text.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? `{${name}}`));
@@ -46,6 +50,8 @@ const errorKeys = {
 	'Disk is read-only.': 'readOnly',
 	'FFU capture requires a GPT disk.': 'gptRequired'
 };
+
+// Translate known backend errors and preserve diagnostic details for other failures.
 export function translateError(language, message) {
 	return errorKeys[message] ? translate(language, errorKeys[message]) : message;
 }
