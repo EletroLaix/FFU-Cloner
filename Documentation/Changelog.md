@@ -1,5 +1,23 @@
 # FFU Cloner Changelog
 
+## Unreleased
+
+### Features
+
+- None.
+
+### BugFix
+
+- Publish MSI release assets with square brackets in their filenames without GitHub CLI interpreting the paths as glob patterns.
+
+### Resources
+
+- None.
+
+### Known issues
+
+- See the latest release for existing limitations.
+
 ## Release: 0.1.2
 
 <div class="Subtitle"><strong>Build:</strong> 0.1.2 <strong>Date:</strong> 14/11/2026</div>
